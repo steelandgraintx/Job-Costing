@@ -1,4 +1,4 @@
-const CACHE_NAME = "job-costing-pwa-v7";
+const CACHE_NAME = "job-costing-pwa-v8";
 const URLS = [
   "./",
   "./index.html",
@@ -24,5 +24,21 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request)));
+  const req = event.request;
+  const url = new URL(req.url);
+
+  // Never intercept non-GET (e.g., cloud sync POST).
+  if (req.method !== "GET") {
+    event.respondWith(fetch(req));
+    return;
+  }
+
+  // Only cache-first for same-origin app assets.
+  if (url.origin === self.location.origin) {
+    event.respondWith(caches.match(req).then((cached) => cached || fetch(req)));
+    return;
+  }
+
+  // For cross-origin GET requests, just fetch from network.
+  event.respondWith(fetch(req));
 });
