@@ -36,7 +36,8 @@ const state = {
   },
   draft: makeDraft(),
   savedJobs: [],
-  lastCalculatedJobId: null
+  lastCalculatedJobId: null,
+  activeDetailJobId: null
 };
 
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
@@ -131,6 +132,22 @@ function setActiveTab(tabName) {
   if (selectedTab) selectedTab.classList.add("active");
   const selectedPanel = document.getElementById(`tab-${tabName}`);
   if (selectedPanel) selectedPanel.classList.add("active");
+}
+
+function openModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (!modal) return;
+  modal.classList.remove("hidden");
+}
+
+function closeModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (!modal) return;
+  modal.classList.add("hidden");
+}
+
+function formatDateOnly(value) {
+  return new Date(value).toLocaleDateString();
 }
 
 function renderLaborRows(tbodyId, listKey, fieldKey) {
@@ -359,6 +376,8 @@ function loadSavedJobIntoDraft(job) {
   renderAllRows();
   renderSummary();
   setActiveTab("main");
+  closeModal("saved-detail-modal");
+  closeModal("summary-modal");
 }
 
 function snapshotCurrentJob() {
@@ -393,36 +412,38 @@ function snapshotCurrentJob() {
 }
 
 function renderSavedJobs() {
-  const body = document.getElementById("saved-body");
-  body.innerHTML = "";
+  const list = document.getElementById("saved-list");
+  list.innerHTML = "";
 
-  state.savedJobs.forEach((job, idx) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${escapeHtml(job.jobId)}</td>
-      <td>${new Date(job.createdDate).toLocaleString()}</td>
-      <td>${escapeHtml(job.clientName || "Unassigned")}</td>
-      <td>${money.format(numberOrZero(job.grandTotal))}</td>
-      <td class="saved-actions">
-        <button class="row-load" aria-label="Load">Load</button>
-        <button class="row-delete" aria-label="Delete">X</button>
-      </td>
+  state.savedJobs.forEach((job) => {
+    const item = document.createElement("button");
+    item.className = "list-item";
+    item.innerHTML = `
+      <span>${escapeHtml(formatDateOnly(job.createdDate))}</span>
+      <span>${escapeHtml(job.clientName || "Unassigned")}</span>
+      <strong>${money.format(numberOrZero(job.grandTotal))}</strong>
     `;
-
-    tr.querySelector(".row-load").addEventListener("click", () => {
-      loadSavedJobIntoDraft(job);
-    });
-
-    tr.querySelector(".row-delete").addEventListener("click", () => {
-      state.savedJobs.splice(idx, 1);
-      saveState();
-      renderSavedJobs();
-    });
-
-    body.appendChild(tr);
+    item.addEventListener("click", () => openSavedDetail(job.jobId));
+    list.appendChild(item);
   });
 
   document.getElementById("saved-count").textContent = `${state.savedJobs.length} saved job record(s)`;
+}
+
+function openSavedDetail(jobId) {
+  const job = state.savedJobs.find((j) => j.jobId === jobId);
+  if (!job) return;
+
+  state.activeDetailJobId = jobId;
+  document.getElementById("detail-date").textContent = formatDateOnly(job.createdDate);
+  document.getElementById("detail-client").textContent = job.clientName || "Unassigned";
+  document.getElementById("detail-grand-total").textContent = money.format(numberOrZero(job.grandTotal));
+  document.getElementById("detail-job-id").textContent = job.jobId;
+  document.getElementById("detail-labor-total").textContent = money.format(numberOrZero(job.totalLaborCost));
+  document.getElementById("detail-material-total").textContent = money.format(numberOrZero(job.totalMaterialCostWithMarkup));
+  document.getElementById("detail-rental-total").textContent = money.format(numberOrZero(job.totalRentalCostWithMarkup));
+  document.getElementById("detail-cc-fee").textContent = money.format(numberOrZero(job.ccFee));
+  openModal("saved-detail-modal");
 }
 
 function escapeHtml(str) {
@@ -556,7 +577,7 @@ function bindInputs() {
     renderSavedJobs();
     const summaryView = summaryFromSavedJob(snapshot);
     renderSummaryDetails(summaryView.sum, summaryView.settings);
-    setActiveTab("summary");
+    openModal("summary-modal");
 
     // Clear Main for next entry; Edit Job restores this saved record.
     state.draft = makeDraft();
@@ -570,11 +591,13 @@ function bindInputs() {
 
   document.getElementById("edit-job").addEventListener("click", () => {
     if (!state.lastCalculatedJobId) {
+      closeModal("summary-modal");
       setActiveTab("main");
       return;
     }
     const job = state.savedJobs.find((j) => j.jobId === state.lastCalculatedJobId);
     if (!job) {
+      closeModal("summary-modal");
       setActiveTab("main");
       return;
     }
@@ -588,6 +611,31 @@ function bindInputs() {
     renderAllRows();
     renderSummary();
     setActiveTab("main");
+    closeModal("summary-modal");
+  });
+
+  document.getElementById("summary-close").addEventListener("click", () => {
+    closeModal("summary-modal");
+  });
+  document.getElementById("saved-detail-close").addEventListener("click", () => {
+    state.activeDetailJobId = null;
+    closeModal("saved-detail-modal");
+  });
+  document.getElementById("saved-detail-edit").addEventListener("click", () => {
+    if (!state.activeDetailJobId) return;
+    const job = state.savedJobs.find((j) => j.jobId === state.activeDetailJobId);
+    if (!job) return;
+    loadSavedJobIntoDraft(job);
+  });
+  document.getElementById("saved-detail-delete").addEventListener("click", () => {
+    if (!state.activeDetailJobId) return;
+    const idx = state.savedJobs.findIndex((j) => j.jobId === state.activeDetailJobId);
+    if (idx < 0) return;
+    state.savedJobs.splice(idx, 1);
+    saveState();
+    renderSavedJobs();
+    state.activeDetailJobId = null;
+    closeModal("saved-detail-modal");
   });
 
   document.getElementById("export-csv").addEventListener("click", exportCsv);
@@ -601,6 +649,8 @@ function bindInputs() {
     state.savedJobs = [];
     saveState();
     renderSavedJobs();
+    state.activeDetailJobId = null;
+    closeModal("saved-detail-modal");
   });
 }
 

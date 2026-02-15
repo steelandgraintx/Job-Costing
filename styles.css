@@ -27,7 +27,7 @@ body {
 
 .tabs {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 6px;
   padding: 10px;
   background: #f0f5f2;
@@ -115,19 +115,6 @@ th:last-child, td:last-child { width: 44px; text-align: right; }
   font-size: 1rem;
   cursor: pointer;
 }
-.saved-actions {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-}
-.row-load {
-  border: 1px solid var(--border);
-  background: #fff;
-  color: var(--brand);
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 0.8rem;
-}
 
 button {
   border: 0;
@@ -198,8 +185,60 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .actions { display: flex; gap: 10px; }
 .actions-inline { display: flex; gap: 10px; margin-top: 10px; }
 
-.table-wrap { overflow-x: auto; }
-#saved-table th, #saved-table td { white-space: nowrap; }
+.saved-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.list-item {
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 10px;
+  text-align: left;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px 10px;
+  overflow-y: auto;
+  z-index: 30;
+}
+.modal.hidden {
+  display: none;
+}
+.modal-card {
+  width: 100%;
+  max-width: 640px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  padding: 12px;
+}
+.modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.modal-head h2 {
+  margin: 0;
+}
+.modal-close {
+  background: #fff;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+}
 
 .hint {
   color: var(--muted);

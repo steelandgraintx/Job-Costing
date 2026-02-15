@@ -15,9 +15,8 @@
   </header>
 
   <nav class="tabs" aria-label="Main navigation">
-    <button class="tab active" data-tab="main">Main</button>
-    <button class="tab" data-tab="summary">Summary</button>
-    <button class="tab" data-tab="saved">Saved Jobs</button>
+    <button class="tab active" data-tab="main">Entry</button>
+    <button class="tab" data-tab="saved">List</button>
     <button class="tab" data-tab="settings">Settings</button>
   </nav>
 
@@ -77,57 +76,11 @@
       </div>
     </section>
 
-    <section id="tab-summary" class="panel">
-      <div class="card total-job-cost">
-        <h2>Total Job Cost</h2>
-        <div class="summary-row"><span>Total Job Cost</span><strong id="sum-total-job-cost"></strong></div>
-        <div class="summary-row"><span>CC Fee Markup</span><strong id="sum-cc-fee-markup"></strong></div>
-        <div class="summary-row total"><span>Grand Total Job Cost</span><strong id="sum-grand-job-cost"></strong></div>
-      </div>
-
-      <div class="card">
-        <h2>Details</h2>
-        <div class="detail-block">
-          <div class="detail-head"><span>Labor</span><strong id="sum-labor-total"></strong></div>
-          <div class="detail-line"><span>Default (<span id="sum-default-rate-label"></span>)</span><strong id="sum-default-labor"></strong></div>
-          <div class="detail-line"><span>With Helper (<span id="sum-helper-rate-label"></span>)</span><strong id="sum-helper-labor"></strong></div>
-          <div class="detail-line"><span>Discount (<span id="sum-discount-rate-label"></span>)</span><strong id="sum-discount-labor"></strong></div>
-        </div>
-        <div class="detail-block">
-          <div class="detail-head"><span>Materials</span><strong id="sum-material-total"></strong></div>
-          <div class="detail-line"><span>Subtotal Materials</span><strong id="sum-material-subtotal"></strong></div>
-          <div class="detail-line"><span>Markup (<span id="sum-material-rate-label"></span>)</span><strong id="sum-material-markup-amount"></strong></div>
-        </div>
-        <div class="detail-block">
-          <div class="detail-head"><span>Rentals</span><strong id="sum-rental-total"></strong></div>
-          <div class="detail-line"><span>Subtotal Rentals</span><strong id="sum-rental-subtotal"></strong></div>
-          <div class="detail-line"><span>Markup (<span id="sum-rental-rate-label"></span>)</span><strong id="sum-rental-markup-amount"></strong></div>
-        </div>
-      </div>
-      <div class="card actions">
-        <button id="edit-job" class="secondary">Edit Job</button>
-        <button id="new-job">New Job</button>
-      </div>
-    </section>
-
     <section id="tab-saved" class="panel">
       <div class="card">
-        <h2>Saved Jobs</h2>
+        <h2>Job List</h2>
         <p id="saved-count"></p>
-        <div class="table-wrap">
-          <table id="saved-table">
-            <thead>
-              <tr>
-                <th>Job ID</th>
-                <th>Date</th>
-                <th>Client</th>
-                <th>Grand Total</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="saved-body"></tbody>
-          </table>
-        </div>
+        <div id="saved-list" class="saved-list"></div>
         <div class="actions-inline">
           <button id="export-csv">Export CSV</button>
           <button id="sync-cloud">Sync Cloud</button>
@@ -168,6 +121,61 @@
       </div>
     </section>
   </main>
+
+  <div id="summary-modal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Calculation Summary">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2>Summary</h2>
+        <button id="summary-close" class="modal-close" aria-label="Close">X</button>
+      </div>
+      <div class="total-job-cost">
+        <div class="summary-row"><span>Total Job Cost</span><strong id="sum-total-job-cost"></strong></div>
+        <div class="summary-row"><span>CC Fee Markup</span><strong id="sum-cc-fee-markup"></strong></div>
+        <div class="summary-row total"><span>Grand Total Job Cost</span><strong id="sum-grand-job-cost"></strong></div>
+      </div>
+      <div class="detail-block">
+        <div class="detail-head"><span>Labor</span><strong id="sum-labor-total"></strong></div>
+        <div class="detail-line"><span>Default (<span id="sum-default-rate-label"></span>)</span><strong id="sum-default-labor"></strong></div>
+        <div class="detail-line"><span>With Helper (<span id="sum-helper-rate-label"></span>)</span><strong id="sum-helper-labor"></strong></div>
+        <div class="detail-line"><span>Discount (<span id="sum-discount-rate-label"></span>)</span><strong id="sum-discount-labor"></strong></div>
+      </div>
+      <div class="detail-block">
+        <div class="detail-head"><span>Materials</span><strong id="sum-material-total"></strong></div>
+        <div class="detail-line"><span>Subtotal Materials</span><strong id="sum-material-subtotal"></strong></div>
+        <div class="detail-line"><span>Markup (<span id="sum-material-rate-label"></span>)</span><strong id="sum-material-markup-amount"></strong></div>
+      </div>
+      <div class="detail-block">
+        <div class="detail-head"><span>Rentals</span><strong id="sum-rental-total"></strong></div>
+        <div class="detail-line"><span>Subtotal Rentals</span><strong id="sum-rental-subtotal"></strong></div>
+        <div class="detail-line"><span>Markup (<span id="sum-rental-rate-label"></span>)</span><strong id="sum-rental-markup-amount"></strong></div>
+      </div>
+      <div class="actions">
+        <button id="edit-job" class="secondary">Edit Job</button>
+        <button id="new-job">New Job</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="saved-detail-modal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Job Detail">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2>Job Detail</h2>
+        <button id="saved-detail-close" class="modal-close" aria-label="Close">X</button>
+      </div>
+      <div class="summary-row"><span>Date</span><strong id="detail-date"></strong></div>
+      <div class="summary-row"><span>Client</span><strong id="detail-client"></strong></div>
+      <div class="summary-row"><span>Grand Total</span><strong id="detail-grand-total"></strong></div>
+      <div class="summary-row"><span>Job ID</span><strong id="detail-job-id"></strong></div>
+      <div class="summary-row"><span>Total Labor</span><strong id="detail-labor-total"></strong></div>
+      <div class="summary-row"><span>Materials (With Markup)</span><strong id="detail-material-total"></strong></div>
+      <div class="summary-row"><span>Rentals (With Markup)</span><strong id="detail-rental-total"></strong></div>
+      <div class="summary-row"><span>CC Fee</span><strong id="detail-cc-fee"></strong></div>
+      <div class="actions">
+        <button id="saved-detail-edit" class="secondary">Edit Job</button>
+        <button id="saved-detail-delete" class="danger">Delete</button>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>
