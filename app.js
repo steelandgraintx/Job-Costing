@@ -35,7 +35,8 @@ const state = {
     syncKey: ""
   },
   draft: makeDraft(),
-  savedJobs: []
+  savedJobs: [],
+  lastCalculatedJobId: null
 };
 
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
@@ -217,12 +218,8 @@ function renderHeaderFields() {
   document.getElementById("setting-sync-key").value = state.settings.syncKey || "";
 }
 
-function renderSummary() {
-  const sum = calcSummary();
-  const settings = state.settings;
-
+function renderMainTotals(sum, settings) {
   const rateToLabel = (rate) => `${money.format(numberOrZero(rate))}/hr`;
-  const percentLabel = (rate) => `${(numberOrZero(rate) * 100).toFixed(2)}%`;
 
   document.getElementById("main-default-rate-label").textContent = rateToLabel(settings.defaultLaborRate);
   document.getElementById("main-helper-rate-label").textContent = rateToLabel(settings.helperLaborRate);
@@ -234,6 +231,11 @@ function renderSummary() {
   document.getElementById("main-material-markup").textContent = money.format(sum.totalMaterialCostWithMarkup);
   document.getElementById("main-rental-base").textContent = money.format(sum.baseRentalCost);
   document.getElementById("main-rental-markup").textContent = money.format(sum.totalRentalCostWithMarkup);
+}
+
+function renderSummaryDetails(sum, settings) {
+  const rateToLabel = (rate) => `${money.format(numberOrZero(rate))}/hr`;
+  const percentLabel = (rate) => `${(numberOrZero(rate) * 100).toFixed(2)}%`;
 
   document.getElementById("sum-total-job-cost").textContent = money.format(sum.subTotal);
   document.getElementById("sum-cc-fee-markup").textContent = money.format(sum.ccFee);
@@ -256,6 +258,40 @@ function renderSummary() {
   document.getElementById("sum-rental-subtotal").textContent = money.format(sum.baseRentalCost);
   document.getElementById("sum-rental-rate-label").textContent = percentLabel(settings.rentalMarkupRate);
   document.getElementById("sum-rental-markup-amount").textContent = money.format(sum.rentalMarkupAmount);
+}
+
+function renderSummary() {
+  const sum = calcSummary();
+  const settings = state.settings;
+  renderMainTotals(sum, settings);
+  renderSummaryDetails(sum, settings);
+}
+
+function summaryFromSavedJob(job) {
+  return {
+    sum: {
+      totalDefaultLaborCost: numberOrZero(job.totalDefaultLaborCost),
+      totalHelperLaborCost: numberOrZero(job.totalHelperLaborCost),
+      totalDiscountLaborCost: numberOrZero(job.totalDiscountLaborCost),
+      totalLaborCost: numberOrZero(job.totalLaborCost),
+      baseMaterialCost: numberOrZero(job.baseMaterialCost),
+      baseRentalCost: numberOrZero(job.baseRentalCost),
+      totalMaterialCostWithMarkup: numberOrZero(job.totalMaterialCostWithMarkup),
+      totalRentalCostWithMarkup: numberOrZero(job.totalRentalCostWithMarkup),
+      materialMarkupAmount: numberOrZero(job.totalMaterialCostWithMarkup) - numberOrZero(job.baseMaterialCost),
+      rentalMarkupAmount: numberOrZero(job.totalRentalCostWithMarkup) - numberOrZero(job.baseRentalCost),
+      subTotal: numberOrZero(job.subTotal),
+      ccFee: numberOrZero(job.ccFee),
+      grandTotal: numberOrZero(job.grandTotal)
+    },
+    settings: {
+      defaultLaborRate: numberOrZero(job.defaultLaborRate),
+      helperLaborRate: numberOrZero(job.helperLaborRate),
+      discountLaborRate: numberOrZero(job.discountLaborRate),
+      materialMarkupRate: numberOrZero(job.materialMarkupRate),
+      rentalMarkupRate: numberOrZero(job.rentalMarkupRate)
+    }
+  };
 }
 
 function ensureRows(list, field) {
@@ -503,15 +539,34 @@ function bindInputs() {
     } else {
       state.savedJobs.unshift(snapshot);
     }
+    state.lastCalculatedJobId = snapshot.jobId;
     saveState();
     renderSavedJobs();
-    renderSummary();
+    const summaryView = summaryFromSavedJob(snapshot);
+    renderSummaryDetails(summaryView.sum, summaryView.settings);
     setActiveTab("summary");
+
+    // Clear Main for next entry; Edit Job restores this saved record.
+    state.draft = makeDraft();
+    saveState();
+    renderHeaderFields();
+    renderAllRows();
+    renderMainTotals(calcSummary(), state.settings);
+
     void syncCloud();
   });
 
   document.getElementById("edit-job").addEventListener("click", () => {
-    setActiveTab("main");
+    if (!state.lastCalculatedJobId) {
+      setActiveTab("main");
+      return;
+    }
+    const job = state.savedJobs.find((j) => j.jobId === state.lastCalculatedJobId);
+    if (!job) {
+      setActiveTab("main");
+      return;
+    }
+    loadSavedJobIntoDraft(job);
   });
 
   document.getElementById("new-job").addEventListener("click", () => {
