@@ -2,7 +2,7 @@
 
 This is an installable web app for iPhone/iPad/desktop with:
 - Editable Settings (material markup, rental markup, CC fee)
-- Main job entry form (multi-line labor/material/rental)
+- Main job entry form (multi-line labor/material/rental, no descriptions)
 - Summary calculations
 - Saved jobs table for reporting
 - CSV export for spreadsheet reporting
@@ -32,4 +32,6 @@ Then open:
 ## Notes
 - This is client-side only (no server database yet).
 - If phone browser data is cleared, saved records are removed.
+- Date and Job ID are still auto-generated/saved, but hidden on Main.
+- Labor rates are now editable only in the `Settings` tab.
 # Job-Costing

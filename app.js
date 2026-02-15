@@ -15,9 +15,6 @@ function makeDraft() {
     clientName: "",
     createdDate: now.toISOString(),
     jobId: makeJobId(now),
-    defaultLaborRate: 85,
-    helperLaborRate: 120,
-    discountLaborRate: 65,
     defaultLabor: [{ description: "", hours: 0 }],
     helperLabor: [{ description: "", hours: 0 }],
     discountLabor: [{ description: "", hours: 0 }],
@@ -28,6 +25,9 @@ function makeDraft() {
 
 const state = {
   settings: {
+    defaultLaborRate: 85,
+    helperLaborRate: 120,
+    discountLaborRate: 65,
     materialMarkupRate: 0.15,
     rentalMarkupRate: 0.10,
     creditCardFeeRate: 0.03
@@ -55,9 +55,9 @@ function calcSummary() {
   const helperHours = sumBy(d.helperLabor, "hours");
   const discountHours = sumBy(d.discountLabor, "hours");
 
-  const totalDefaultLaborCost = defaultHours * numberOrZero(d.defaultLaborRate);
-  const totalHelperLaborCost = helperHours * numberOrZero(d.helperLaborRate);
-  const totalDiscountLaborCost = discountHours * numberOrZero(d.discountLaborRate);
+  const totalDefaultLaborCost = defaultHours * numberOrZero(s.defaultLaborRate);
+  const totalHelperLaborCost = helperHours * numberOrZero(s.helperLaborRate);
+  const totalDiscountLaborCost = discountHours * numberOrZero(s.discountLaborRate);
   const totalLaborCost = totalDefaultLaborCost + totalHelperLaborCost + totalDiscountLaborCost;
 
   const baseMaterialCost = sumBy(d.materialCosts, "amount");
@@ -101,7 +101,9 @@ function loadState() {
     const savedJobs = JSON.parse(localStorage.getItem(STORAGE_KEYS.savedJobs));
 
     if (draft && typeof draft === "object") state.draft = draft;
-    if (settings && typeof settings === "object") state.settings = settings;
+    if (settings && typeof settings === "object") {
+      state.settings = { ...state.settings, ...settings };
+    }
     if (Array.isArray(savedJobs)) state.savedJobs = savedJobs;
   } catch (_) {
     // ignore bad local state
@@ -128,17 +130,6 @@ function renderLaborRows(tbodyId, listKey, fieldKey) {
 
   rows.forEach((row, idx) => {
     const tr = document.createElement("tr");
-
-    const tdDesc = document.createElement("td");
-    const descInput = document.createElement("input");
-    descInput.type = "text";
-    descInput.value = row.description || "";
-    descInput.placeholder = "Description";
-    descInput.addEventListener("input", (e) => {
-      state.draft[listKey][idx].description = e.target.value;
-      saveState();
-    });
-    tdDesc.appendChild(descInput);
 
     const tdNum = document.createElement("td");
     const numInput = document.createElement("input");
@@ -169,7 +160,6 @@ function renderLaborRows(tbodyId, listKey, fieldKey) {
     });
     tdDelete.appendChild(deleteBtn);
 
-    tr.appendChild(tdDesc);
     tr.appendChild(tdNum);
     tr.appendChild(tdDelete);
     tbody.appendChild(tr);
@@ -196,13 +186,11 @@ function addRow(listKey, fieldKey) {
 
 function renderHeaderFields() {
   const d = state.draft;
-  document.getElementById("job-date").value = new Date(d.createdDate).toLocaleString();
-  document.getElementById("job-id").value = d.jobId;
   document.getElementById("client-name").value = d.clientName || "";
-  document.getElementById("default-rate").value = numberOrZero(d.defaultLaborRate);
-  document.getElementById("helper-rate").value = numberOrZero(d.helperLaborRate);
-  document.getElementById("discount-rate").value = numberOrZero(d.discountLaborRate);
 
+  document.getElementById("setting-default-rate").value = numberOrZero(state.settings.defaultLaborRate);
+  document.getElementById("setting-helper-rate").value = numberOrZero(state.settings.helperLaborRate);
+  document.getElementById("setting-discount-rate").value = numberOrZero(state.settings.discountLaborRate);
   document.getElementById("setting-material-markup").value = numberOrZero(state.settings.materialMarkupRate);
   document.getElementById("setting-rental-markup").value = numberOrZero(state.settings.rentalMarkupRate);
   document.getElementById("setting-cc-fee").value = numberOrZero(state.settings.creditCardFeeRate);
@@ -230,9 +218,9 @@ function snapshotCurrentJob() {
     defaultLaborHours: sum.defaultHours,
     helperLaborHours: sum.helperHours,
     discountLaborHours: sum.discountHours,
-    defaultLaborRate: numberOrZero(state.draft.defaultLaborRate),
-    helperLaborRate: numberOrZero(state.draft.helperLaborRate),
-    discountLaborRate: numberOrZero(state.draft.discountLaborRate),
+    defaultLaborRate: numberOrZero(state.settings.defaultLaborRate),
+    helperLaborRate: numberOrZero(state.settings.helperLaborRate),
+    discountLaborRate: numberOrZero(state.settings.discountLaborRate),
     baseMaterialCost: sum.baseMaterialCost,
     baseRentalCost: sum.baseRentalCost,
     materialMarkupRate: numberOrZero(state.settings.materialMarkupRate),
@@ -354,18 +342,18 @@ function bindInputs() {
     saveState();
   });
 
-  document.getElementById("default-rate").addEventListener("input", (e) => {
-    state.draft.defaultLaborRate = numberOrZero(e.target.value);
+  document.getElementById("setting-default-rate").addEventListener("input", (e) => {
+    state.settings.defaultLaborRate = numberOrZero(e.target.value);
     saveState();
     renderSummary();
   });
-  document.getElementById("helper-rate").addEventListener("input", (e) => {
-    state.draft.helperLaborRate = numberOrZero(e.target.value);
+  document.getElementById("setting-helper-rate").addEventListener("input", (e) => {
+    state.settings.helperLaborRate = numberOrZero(e.target.value);
     saveState();
     renderSummary();
   });
-  document.getElementById("discount-rate").addEventListener("input", (e) => {
-    state.draft.discountLaborRate = numberOrZero(e.target.value);
+  document.getElementById("setting-discount-rate").addEventListener("input", (e) => {
+    state.settings.discountLaborRate = numberOrZero(e.target.value);
     saveState();
     renderSummary();
   });

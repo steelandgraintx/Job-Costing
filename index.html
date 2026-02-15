@@ -25,56 +25,33 @@
     <section id="tab-main" class="panel active">
       <div class="card">
         <h2>Job Info</h2>
-        <div class="grid-2">
-          <label>Date
-            <input id="job-date" type="text" readonly>
-          </label>
-          <label>Job ID
-            <input id="job-id" type="text" readonly>
-          </label>
-        </div>
         <label>Client Name
           <input id="client-name" type="text" placeholder="Client name">
         </label>
       </div>
 
       <div class="card">
-        <h2>Labor Rates</h2>
-        <div class="grid-3">
-          <label>Default Rate
-            <input id="default-rate" type="number" step="0.01" min="0">
-          </label>
-          <label>With Helper Rate
-            <input id="helper-rate" type="number" step="0.01" min="0">
-          </label>
-          <label>Discount Rate
-            <input id="discount-rate" type="number" step="0.01" min="0">
-          </label>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Labor Hours @ Default Rate</h2>
+        <h2>Default Labor Hours @ Rate</h2>
         <table>
-          <thead><tr><th>Description</th><th>Hours</th><th></th></tr></thead>
+          <thead><tr><th>Hours</th><th></th></tr></thead>
           <tbody id="default-labor-body"></tbody>
         </table>
         <button id="add-default-labor" class="secondary">Add Line</button>
       </div>
 
       <div class="card">
-        <h2>Labor Hours @ With Helper Rate</h2>
+        <h2>With Helper Labor Hours @ Rate</h2>
         <table>
-          <thead><tr><th>Description</th><th>Hours</th><th></th></tr></thead>
+          <thead><tr><th>Hours</th><th></th></tr></thead>
           <tbody id="helper-labor-body"></tbody>
         </table>
         <button id="add-helper-labor" class="secondary">Add Line</button>
       </div>
 
       <div class="card">
-        <h2>Labor Hours @ Discount Rate</h2>
+        <h2>Discount Labor Hours @ Rate</h2>
         <table>
-          <thead><tr><th>Description</th><th>Hours</th><th></th></tr></thead>
+          <thead><tr><th>Hours</th><th></th></tr></thead>
           <tbody id="discount-labor-body"></tbody>
         </table>
         <button id="add-discount-labor" class="secondary">Add Line</button>
@@ -83,7 +60,7 @@
       <div class="card">
         <h2>Material Cost</h2>
         <table>
-          <thead><tr><th>Description</th><th>Cost</th><th></th></tr></thead>
+          <thead><tr><th>Cost</th><th></th></tr></thead>
           <tbody id="material-body"></tbody>
         </table>
         <button id="add-material" class="secondary">Add Line</button>
@@ -92,7 +69,7 @@
       <div class="card">
         <h2>Rental Cost</h2>
         <table>
-          <thead><tr><th>Description</th><th>Cost</th><th></th></tr></thead>
+          <thead><tr><th>Cost</th><th></th></tr></thead>
           <tbody id="rental-body"></tbody>
         </table>
         <button id="add-rental" class="secondary">Add Line</button>
@@ -146,6 +123,15 @@
     <section id="tab-settings" class="panel">
       <div class="card">
         <h2>Settings (editable)</h2>
+        <label>Default Labor Rate
+          <input id="setting-default-rate" type="number" step="0.01" min="0">
+        </label>
+        <label>With Helper Labor Rate
+          <input id="setting-helper-rate" type="number" step="0.01" min="0">
+        </label>
+        <label>Discount Labor Rate
+          <input id="setting-discount-rate" type="number" step="0.01" min="0">
+        </label>
         <label>Material Markup Rate
           <input id="setting-material-markup" type="number" step="0.0001" min="0">
         </label>
