@@ -115,6 +115,19 @@ th:last-child, td:last-child { width: 44px; text-align: right; }
   font-size: 1rem;
   cursor: pointer;
 }
+.saved-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.row-load {
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--brand);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
 
 button {
   border: 0;

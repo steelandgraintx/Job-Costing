@@ -8,6 +8,7 @@ This is an installable web app for iPhone/iPad/desktop with:
 - `Calculate` button on Main saves/updates the job record and opens Summary
 - Summary calculations
 - Saved jobs table for reporting
+- Load saved job back into Main for editing
 - CSV export for spreadsheet reporting
 - Offline support (service worker)
 - Optional cross-device sync via cloud endpoint (see `CLOUD_SYNC.md`)

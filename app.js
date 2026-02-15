@@ -258,6 +258,61 @@ function renderSummary() {
   document.getElementById("sum-rental-markup-amount").textContent = money.format(sum.rentalMarkupAmount);
 }
 
+function ensureRows(list, field) {
+  const safe = Array.isArray(list) ? list : [];
+  const cleaned = safe
+    .map((row) => ({ [field]: row && row[field] !== undefined ? row[field] : "" }))
+    .filter((row) => row[field] !== "");
+  cleaned.push({ [field]: "" });
+  return cleaned;
+}
+
+function buildDraftPayload() {
+  return {
+    clientName: state.draft.clientName || "",
+    createdDate: state.draft.createdDate,
+    jobId: state.draft.jobId,
+    defaultLabor: ensureRows(state.draft.defaultLabor, "hours"),
+    helperLabor: ensureRows(state.draft.helperLabor, "hours"),
+    discountLabor: ensureRows(state.draft.discountLabor, "hours"),
+    materialCosts: ensureRows(state.draft.materialCosts, "amount"),
+    rentalCosts: ensureRows(state.draft.rentalCosts, "amount")
+  };
+}
+
+function loadSavedJobIntoDraft(job) {
+  if (!job) return;
+  if (!job.draftData) {
+    alert("This older saved record cannot be edited because line-item data was not stored yet.");
+    return;
+  }
+
+  const d = job.draftData;
+  state.draft = {
+    clientName: d.clientName || "",
+    createdDate: d.createdDate || new Date().toISOString(),
+    jobId: d.jobId || makeJobId(new Date()),
+    defaultLabor: ensureRows(d.defaultLabor, "hours"),
+    helperLabor: ensureRows(d.helperLabor, "hours"),
+    discountLabor: ensureRows(d.discountLabor, "hours"),
+    materialCosts: ensureRows(d.materialCosts, "amount"),
+    rentalCosts: ensureRows(d.rentalCosts, "amount")
+  };
+
+  if (job.defaultLaborRate !== undefined) state.settings.defaultLaborRate = numberOrZero(job.defaultLaborRate);
+  if (job.helperLaborRate !== undefined) state.settings.helperLaborRate = numberOrZero(job.helperLaborRate);
+  if (job.discountLaborRate !== undefined) state.settings.discountLaborRate = numberOrZero(job.discountLaborRate);
+  if (job.materialMarkupRate !== undefined) state.settings.materialMarkupRate = numberOrZero(job.materialMarkupRate);
+  if (job.rentalMarkupRate !== undefined) state.settings.rentalMarkupRate = numberOrZero(job.rentalMarkupRate);
+  if (job.creditCardFeeRate !== undefined) state.settings.creditCardFeeRate = numberOrZero(job.creditCardFeeRate);
+
+  saveState();
+  renderHeaderFields();
+  renderAllRows();
+  renderSummary();
+  setActiveTab("main");
+}
+
 function snapshotCurrentJob() {
   const sum = calcSummary();
   return {
@@ -284,7 +339,8 @@ function snapshotCurrentJob() {
     totalRentalCostWithMarkup: sum.totalRentalCostWithMarkup,
     subTotal: sum.subTotal,
     ccFee: sum.ccFee,
-    grandTotal: sum.grandTotal
+    grandTotal: sum.grandTotal,
+    draftData: buildDraftPayload()
   };
 }
 
@@ -299,10 +355,17 @@ function renderSavedJobs() {
       <td>${new Date(job.createdDate).toLocaleString()}</td>
       <td>${escapeHtml(job.clientName || "Unassigned")}</td>
       <td>${money.format(numberOrZero(job.grandTotal))}</td>
-      <td><button class="row-delete" aria-label="Delete">X</button></td>
+      <td class="saved-actions">
+        <button class="row-load" aria-label="Load">Load</button>
+        <button class="row-delete" aria-label="Delete">X</button>
+      </td>
     `;
 
-    tr.querySelector("button").addEventListener("click", () => {
+    tr.querySelector(".row-load").addEventListener("click", () => {
+      loadSavedJobIntoDraft(job);
+    });
+
+    tr.querySelector(".row-delete").addEventListener("click", () => {
       state.savedJobs.splice(idx, 1);
       saveState();
       renderSavedJobs();
@@ -485,7 +548,12 @@ function mergeJobs(localJobs, remoteJobs) {
     }
     const existingTime = Date.parse(existing.updatedAt || existing.createdDate || 0);
     const incomingTime = Date.parse(job.updatedAt || job.createdDate || 0);
-    map.set(job.jobId, incomingTime >= existingTime ? job : existing);
+    const winner = incomingTime >= existingTime ? job : existing;
+    const loser = incomingTime >= existingTime ? existing : job;
+    if (!winner.draftData && loser.draftData) {
+      winner.draftData = loser.draftData;
+    }
+    map.set(job.jobId, winner);
   };
 
   localJobs.forEach(add);
