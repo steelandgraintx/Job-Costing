@@ -133,6 +133,45 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   padding-top: 12px;
   font-size: 1.03rem;
 }
+
+.total-job-cost {
+  border: 2px solid var(--brand);
+}
+.total-job-cost h2 {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+.total-job-cost .summary-row {
+  font-size: 1.07rem;
+  font-weight: 700;
+}
+.total-job-cost .summary-row.total {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.detail-block {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.detail-block:last-child {
+  border-bottom: 0;
+}
+.detail-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.detail-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-left: 16px;
+  font-size: 0.95rem;
+  margin: 4px 0;
+}
 .actions { display: flex; gap: 10px; }
 .actions-inline { display: flex; gap: 10px; margin-top: 10px; }
 

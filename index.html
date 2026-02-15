@@ -74,24 +74,54 @@
         </table>
         <button id="add-rental" class="secondary">Add Line</button>
       </div>
+
+      <div class="card">
+        <h2>Live Totals</h2>
+        <div class="summary-row"><span>Default Labor</span><strong id="main-default-labor"></strong></div>
+        <div class="summary-row"><span>With Helper Labor</span><strong id="main-helper-labor"></strong></div>
+        <div class="summary-row"><span>Discount Labor</span><strong id="main-discount-labor"></strong></div>
+        <div class="summary-row"><span>Total Labor</span><strong id="main-total-labor"></strong></div>
+        <div class="summary-row"><span>Materials (No Markup)</span><strong id="main-material-base"></strong></div>
+        <div class="summary-row"><span>Materials (With Markup)</span><strong id="main-material-markup"></strong></div>
+        <div class="summary-row"><span>Rentals (No Markup)</span><strong id="main-rental-base"></strong></div>
+        <div class="summary-row"><span>Rentals (With Markup)</span><strong id="main-rental-markup"></strong></div>
+      </div>
+
+      <div class="card actions">
+        <button id="calculate-job">Calculate</button>
+      </div>
     </section>
 
     <section id="tab-summary" class="panel">
+      <div class="card total-job-cost">
+        <h2>Total Job Cost</h2>
+        <div class="summary-row"><span>Total Job Cost</span><strong id="sum-total-job-cost"></strong></div>
+        <div class="summary-row"><span>CC Fee Markup</span><strong id="sum-cc-fee-markup"></strong></div>
+        <div class="summary-row total"><span>Grand Total Job Cost</span><strong id="sum-grand-job-cost"></strong></div>
+      </div>
+
       <div class="card">
-        <h2>Summary</h2>
-        <div class="summary-row"><span>Total Default Labor Cost</span><strong id="sum-default-labor"></strong></div>
-        <div class="summary-row"><span>Total Helper Labor Cost</span><strong id="sum-helper-labor"></strong></div>
-        <div class="summary-row"><span>Total Discount Labor Cost</span><strong id="sum-discount-labor"></strong></div>
-        <div class="summary-row"><span>Total Labor Cost (all types)</span><strong id="sum-labor"></strong></div>
-        <div class="summary-row"><span>Total Material Cost (with markup)</span><strong id="sum-material"></strong></div>
-        <div class="summary-row"><span>Total Rental Cost (with markup)</span><strong id="sum-rental"></strong></div>
-        <div class="summary-row"><span>Sub Total</span><strong id="sum-subtotal"></strong></div>
-        <div class="summary-row"><span>CC Fee</span><strong id="sum-cc"></strong></div>
-        <div class="summary-row total"><span>Grand Total</span><strong id="sum-grand"></strong></div>
+        <h2>Details</h2>
+        <div class="detail-block">
+          <div class="detail-head"><span>Labor</span><strong id="sum-labor-total"></strong></div>
+          <div class="detail-line"><span>Default (<span id="sum-default-rate-label"></span>)</span><strong id="sum-default-labor"></strong></div>
+          <div class="detail-line"><span>With Helper (<span id="sum-helper-rate-label"></span>)</span><strong id="sum-helper-labor"></strong></div>
+          <div class="detail-line"><span>Discount (<span id="sum-discount-rate-label"></span>)</span><strong id="sum-discount-labor"></strong></div>
+        </div>
+        <div class="detail-block">
+          <div class="detail-head"><span>Materials</span><strong id="sum-material-total"></strong></div>
+          <div class="detail-line"><span>Subtotal Materials</span><strong id="sum-material-subtotal"></strong></div>
+          <div class="detail-line"><span>Markup (<span id="sum-material-rate-label"></span>)</span><strong id="sum-material-markup-amount"></strong></div>
+        </div>
+        <div class="detail-block">
+          <div class="detail-head"><span>Rentals</span><strong id="sum-rental-total"></strong></div>
+          <div class="detail-line"><span>Subtotal Rentals</span><strong id="sum-rental-subtotal"></strong></div>
+          <div class="detail-line"><span>Markup (<span id="sum-rental-rate-label"></span>)</span><strong id="sum-rental-markup-amount"></strong></div>
+        </div>
       </div>
       <div class="card actions">
-        <button id="save-job">Save Job Record</button>
-        <button id="new-job" class="secondary">Start New Job</button>
+        <button id="edit-job" class="secondary">Edit Job</button>
+        <button id="new-job">New Job</button>
       </div>
     </section>
 

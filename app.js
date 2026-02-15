@@ -62,9 +62,11 @@ function calcSummary() {
 
   const baseMaterialCost = sumBy(d.materialCosts, "amount");
   const baseRentalCost = sumBy(d.rentalCosts, "amount");
+  const materialMarkupAmount = baseMaterialCost * numberOrZero(s.materialMarkupRate);
+  const rentalMarkupAmount = baseRentalCost * numberOrZero(s.rentalMarkupRate);
 
-  const totalMaterialCostWithMarkup = baseMaterialCost * (1 + numberOrZero(s.materialMarkupRate));
-  const totalRentalCostWithMarkup = baseRentalCost * (1 + numberOrZero(s.rentalMarkupRate));
+  const totalMaterialCostWithMarkup = baseMaterialCost + materialMarkupAmount;
+  const totalRentalCostWithMarkup = baseRentalCost + rentalMarkupAmount;
 
   const subTotal = totalLaborCost + totalMaterialCostWithMarkup + totalRentalCostWithMarkup;
   const ccFee = subTotal * numberOrZero(s.creditCardFeeRate);
@@ -76,6 +78,8 @@ function calcSummary() {
     discountHours,
     baseMaterialCost,
     baseRentalCost,
+    materialMarkupAmount,
+    rentalMarkupAmount,
     totalDefaultLaborCost,
     totalHelperLaborCost,
     totalDiscountLaborCost,
@@ -113,14 +117,17 @@ function loadState() {
 function bindTabs() {
   const tabButtons = document.querySelectorAll(".tab");
   tabButtons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const tabName = btn.dataset.tab;
-      document.querySelectorAll(".tab").forEach((x) => x.classList.remove("active"));
-      document.querySelectorAll(".panel").forEach((x) => x.classList.remove("active"));
-      btn.classList.add("active");
-      document.getElementById(`tab-${tabName}`).classList.add("active");
-    });
+    btn.addEventListener("click", () => setActiveTab(btn.dataset.tab));
   });
+}
+
+function setActiveTab(tabName) {
+  document.querySelectorAll(".tab").forEach((x) => x.classList.remove("active"));
+  document.querySelectorAll(".panel").forEach((x) => x.classList.remove("active"));
+  const selectedTab = document.querySelector(`.tab[data-tab="${tabName}"]`);
+  if (selectedTab) selectedTab.classList.add("active");
+  const selectedPanel = document.getElementById(`tab-${tabName}`);
+  if (selectedPanel) selectedPanel.classList.add("active");
 }
 
 function renderLaborRows(tbodyId, listKey, fieldKey) {
@@ -198,15 +205,41 @@ function renderHeaderFields() {
 
 function renderSummary() {
   const sum = calcSummary();
+  const settings = state.settings;
+
+  const rateToLabel = (rate) => `${money.format(numberOrZero(rate))}/hr`;
+  const percentLabel = (rate) => `${(numberOrZero(rate) * 100).toFixed(2)}%`;
+
+  document.getElementById("main-default-labor").textContent = money.format(sum.totalDefaultLaborCost);
+  document.getElementById("main-helper-labor").textContent = money.format(sum.totalHelperLaborCost);
+  document.getElementById("main-discount-labor").textContent = money.format(sum.totalDiscountLaborCost);
+  document.getElementById("main-total-labor").textContent = money.format(sum.totalLaborCost);
+  document.getElementById("main-material-base").textContent = money.format(sum.baseMaterialCost);
+  document.getElementById("main-material-markup").textContent = money.format(sum.totalMaterialCostWithMarkup);
+  document.getElementById("main-rental-base").textContent = money.format(sum.baseRentalCost);
+  document.getElementById("main-rental-markup").textContent = money.format(sum.totalRentalCostWithMarkup);
+
+  document.getElementById("sum-total-job-cost").textContent = money.format(sum.subTotal);
+  document.getElementById("sum-cc-fee-markup").textContent = money.format(sum.ccFee);
+  document.getElementById("sum-grand-job-cost").textContent = money.format(sum.grandTotal);
+
+  document.getElementById("sum-labor-total").textContent = money.format(sum.totalLaborCost);
   document.getElementById("sum-default-labor").textContent = money.format(sum.totalDefaultLaborCost);
   document.getElementById("sum-helper-labor").textContent = money.format(sum.totalHelperLaborCost);
   document.getElementById("sum-discount-labor").textContent = money.format(sum.totalDiscountLaborCost);
-  document.getElementById("sum-labor").textContent = money.format(sum.totalLaborCost);
-  document.getElementById("sum-material").textContent = money.format(sum.totalMaterialCostWithMarkup);
-  document.getElementById("sum-rental").textContent = money.format(sum.totalRentalCostWithMarkup);
-  document.getElementById("sum-subtotal").textContent = money.format(sum.subTotal);
-  document.getElementById("sum-cc").textContent = money.format(sum.ccFee);
-  document.getElementById("sum-grand").textContent = money.format(sum.grandTotal);
+  document.getElementById("sum-default-rate-label").textContent = rateToLabel(settings.defaultLaborRate);
+  document.getElementById("sum-helper-rate-label").textContent = rateToLabel(settings.helperLaborRate);
+  document.getElementById("sum-discount-rate-label").textContent = rateToLabel(settings.discountLaborRate);
+
+  document.getElementById("sum-material-total").textContent = money.format(sum.totalMaterialCostWithMarkup);
+  document.getElementById("sum-material-subtotal").textContent = money.format(sum.baseMaterialCost);
+  document.getElementById("sum-material-rate-label").textContent = percentLabel(settings.materialMarkupRate);
+  document.getElementById("sum-material-markup-amount").textContent = money.format(sum.materialMarkupAmount);
+
+  document.getElementById("sum-rental-total").textContent = money.format(sum.totalRentalCostWithMarkup);
+  document.getElementById("sum-rental-subtotal").textContent = money.format(sum.baseRentalCost);
+  document.getElementById("sum-rental-rate-label").textContent = percentLabel(settings.rentalMarkupRate);
+  document.getElementById("sum-rental-markup-amount").textContent = money.format(sum.rentalMarkupAmount);
 }
 
 function snapshotCurrentJob() {
@@ -380,12 +413,22 @@ function bindInputs() {
   document.getElementById("add-material").addEventListener("click", () => addRow("materialCosts", "amount"));
   document.getElementById("add-rental").addEventListener("click", () => addRow("rentalCosts", "amount"));
 
-  document.getElementById("save-job").addEventListener("click", () => {
+  document.getElementById("calculate-job").addEventListener("click", () => {
     const snapshot = snapshotCurrentJob();
-    state.savedJobs.unshift(snapshot);
+    const existingIdx = state.savedJobs.findIndex((j) => j.jobId === snapshot.jobId);
+    if (existingIdx >= 0) {
+      state.savedJobs[existingIdx] = snapshot;
+    } else {
+      state.savedJobs.unshift(snapshot);
+    }
     saveState();
     renderSavedJobs();
-    alert("Job saved.");
+    renderSummary();
+    setActiveTab("summary");
+  });
+
+  document.getElementById("edit-job").addEventListener("click", () => {
+    setActiveTab("main");
   });
 
   document.getElementById("new-job").addEventListener("click", () => {
@@ -394,6 +437,7 @@ function bindInputs() {
     renderHeaderFields();
     renderAllRows();
     renderSummary();
+    setActiveTab("main");
   });
 
   document.getElementById("export-csv").addEventListener("click", exportCsv);
