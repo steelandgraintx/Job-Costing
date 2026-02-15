@@ -44,6 +44,7 @@ const state = {
   lastCalculatedJobId: null,
   activeDetailJobId: null,
   jobPricingOverride: null,
+  activeSummaryView: null,
   isEditingSavedJob: false
 };
 
@@ -396,7 +397,11 @@ function renderSummary() {
   const sum = calcSummary();
   const settings = getEffectiveSettings();
   renderMainTotals(sum, settings);
-  renderSummaryDetails(sum, settings);
+  if (state.activeSummaryView) {
+    renderSummaryDetails(state.activeSummaryView.sum, state.activeSummaryView.settings);
+  } else {
+    renderSummaryDetails(sum, settings);
+  }
 }
 
 function summaryFromSavedJob(job) {
@@ -485,6 +490,7 @@ function loadSavedJobIntoDraft(job) {
   renderAllRows();
   renderSummary();
   setActiveTab("main");
+  state.activeSummaryView = null;
   closeModal("saved-detail-modal");
   closeModal("summary-modal");
 }
@@ -709,6 +715,7 @@ function bindInputs() {
     saveState();
     renderSavedJobs();
     const summaryView = summaryFromSavedJob(snapshot);
+    state.activeSummaryView = summaryView;
     renderSummaryDetails(summaryView.sum, summaryView.settings);
     openModal("summary-modal");
 
@@ -748,10 +755,12 @@ function bindInputs() {
     renderAllRows();
     renderSummary();
     setActiveTab("main");
+    state.activeSummaryView = null;
     closeModal("summary-modal");
   });
 
   document.getElementById("summary-close").addEventListener("click", () => {
+    state.activeSummaryView = null;
     closeModal("summary-modal");
   });
   document.getElementById("saved-detail-close").addEventListener("click", () => {
