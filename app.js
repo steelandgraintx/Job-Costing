@@ -504,13 +504,13 @@ async function syncCloud(showAlert = false) {
   try {
     const response = await fetch(endpoint, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({
         key,
         jobs: state.savedJobs
       })
     });
-    if (!response.ok) throw new Error("Sync request failed");
+    if (!response.ok) throw new Error(`Sync request failed (${response.status})`);
     const payload = await response.json();
     const remoteJobs = Array.isArray(payload.jobs) ? payload.jobs : [];
     state.savedJobs = mergeJobs(state.savedJobs, remoteJobs);
@@ -518,7 +518,7 @@ async function syncCloud(showAlert = false) {
     renderSavedJobs();
     if (showAlert) alert("Cloud sync completed.");
   } catch (err) {
-    if (showAlert) alert("Cloud sync failed. Check endpoint URL and key.");
+    if (showAlert) alert(`Cloud sync failed: ${err.message}. Check endpoint URL, deployment access, and sync key.`);
   }
 }
 
