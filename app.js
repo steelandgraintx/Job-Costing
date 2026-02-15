@@ -3,6 +3,7 @@ const STORAGE_KEYS = {
   settings: "job_costing_pwa_settings",
   savedJobs: "job_costing_pwa_saved_jobs"
 };
+const SETTINGS_RECORD_ID = "__APP_SETTINGS__";
 
 function makeJobId(date) {
   const pad = (n) => String(n).padStart(2, "0");
@@ -31,13 +32,15 @@ const state = {
     materialMarkupRate: 0.15,
     rentalMarkupRate: 0.10,
     creditCardFeeRate: 0.03,
+    settingsUpdatedAt: "",
     syncEndpoint: "",
     syncKey: ""
   },
   draft: makeDraft(),
   savedJobs: [],
   lastCalculatedJobId: null,
-  activeDetailJobId: null
+  activeDetailJobId: null,
+  jobPricingOverride: null
 };
 
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
@@ -51,9 +54,17 @@ function sumBy(items, field) {
   return items.reduce((acc, item) => acc + numberOrZero(item[field]), 0);
 }
 
+function getEffectiveSettings() {
+  if (!state.jobPricingOverride) return state.settings;
+  return {
+    ...state.settings,
+    ...state.jobPricingOverride
+  };
+}
+
 function calcSummary() {
   const d = state.draft;
-  const s = state.settings;
+  const s = getEffectiveSettings();
 
   const defaultHours = sumBy(d.defaultLabor, "hours");
   const helperHours = sumBy(d.helperLabor, "hours");
@@ -116,6 +127,12 @@ function loadState() {
   } catch (_) {
     // ignore bad local state
   }
+
+  if (!state.settings.settingsUpdatedAt) {
+    touchSettingsUpdatedAt();
+  }
+  upsertSettingsRecord();
+  applySettingsFromSyncedRecord();
 }
 
 function bindTabs() {
@@ -132,6 +149,64 @@ function setActiveTab(tabName) {
   if (selectedTab) selectedTab.classList.add("active");
   const selectedPanel = document.getElementById(`tab-${tabName}`);
   if (selectedPanel) selectedPanel.classList.add("active");
+}
+
+function isSettingsRecord(job) {
+  return job && job.jobId === SETTINGS_RECORD_ID;
+}
+
+function getUserJobs() {
+  return state.savedJobs.filter((job) => !isSettingsRecord(job));
+}
+
+function touchSettingsUpdatedAt() {
+  state.settings.settingsUpdatedAt = new Date().toISOString();
+}
+
+function buildSettingsRecord() {
+  const settingsPayload = {
+    defaultLaborRate: numberOrZero(state.settings.defaultLaborRate),
+    helperLaborRate: numberOrZero(state.settings.helperLaborRate),
+    discountLaborRate: numberOrZero(state.settings.discountLaborRate),
+    materialMarkupRate: numberOrZero(state.settings.materialMarkupRate),
+    rentalMarkupRate: numberOrZero(state.settings.rentalMarkupRate),
+    creditCardFeeRate: numberOrZero(state.settings.creditCardFeeRate),
+    settingsUpdatedAt: state.settings.settingsUpdatedAt || new Date().toISOString()
+  };
+
+  return {
+    jobId: SETTINGS_RECORD_ID,
+    updatedAt: settingsPayload.settingsUpdatedAt,
+    createdDate: settingsPayload.settingsUpdatedAt,
+    clientName: "SYSTEM",
+    grandTotal: 0,
+    draftData: { settings: settingsPayload }
+  };
+}
+
+function upsertSettingsRecord() {
+  const record = buildSettingsRecord();
+  const idx = state.savedJobs.findIndex((job) => isSettingsRecord(job));
+  if (idx >= 0) state.savedJobs[idx] = record;
+  else state.savedJobs.push(record);
+}
+
+function applySettingsFromSyncedRecord() {
+  const record = state.savedJobs.find((job) => isSettingsRecord(job));
+  const incoming = record && record.draftData && record.draftData.settings ? record.draftData.settings : null;
+  if (!incoming) return;
+
+  const localTs = Date.parse(state.settings.settingsUpdatedAt || 0);
+  const incomingTs = Date.parse(incoming.settingsUpdatedAt || 0);
+  if (incomingTs < localTs) return;
+
+  state.settings.defaultLaborRate = numberOrZero(incoming.defaultLaborRate);
+  state.settings.helperLaborRate = numberOrZero(incoming.helperLaborRate);
+  state.settings.discountLaborRate = numberOrZero(incoming.discountLaborRate);
+  state.settings.materialMarkupRate = numberOrZero(incoming.materialMarkupRate);
+  state.settings.rentalMarkupRate = numberOrZero(incoming.rentalMarkupRate);
+  state.settings.creditCardFeeRate = numberOrZero(incoming.creditCardFeeRate);
+  state.settings.settingsUpdatedAt = incoming.settingsUpdatedAt || state.settings.settingsUpdatedAt;
 }
 
 function openModal(modalId) {
@@ -248,7 +323,7 @@ function renderHeaderFields() {
 }
 
 function renderMainTotals(sum, settings) {
-  const rateToLabel = (rate) => `${money.format(numberOrZero(rate))}/hr`;
+  const rateToLabel = (rate) => `${money.format(numberOrZero(rate))}`;
 
   document.getElementById("main-default-rate-label").textContent = rateToLabel(settings.defaultLaborRate);
   document.getElementById("main-helper-rate-label").textContent = rateToLabel(settings.helperLaborRate);
@@ -263,7 +338,7 @@ function renderMainTotals(sum, settings) {
 }
 
 function renderSummaryDetails(sum, settings) {
-  const rateToLabel = (rate) => `${money.format(numberOrZero(rate))}/hr`;
+  const rateToLabel = (rate) => `${money.format(numberOrZero(rate))}`;
   const percentLabel = (rate) => `${(numberOrZero(rate) * 100).toFixed(2)}%`;
 
   document.getElementById("sum-total-job-cost").textContent = money.format(sum.subTotal);
@@ -291,7 +366,7 @@ function renderSummaryDetails(sum, settings) {
 
 function renderSummary() {
   const sum = calcSummary();
-  const settings = state.settings;
+  const settings = getEffectiveSettings();
   renderMainTotals(sum, settings);
   renderSummaryDetails(sum, settings);
 }
@@ -364,12 +439,14 @@ function loadSavedJobIntoDraft(job) {
     rentalCosts: ensureRows(d.rentalCosts, "amount")
   };
 
-  if (job.defaultLaborRate !== undefined) state.settings.defaultLaborRate = numberOrZero(job.defaultLaborRate);
-  if (job.helperLaborRate !== undefined) state.settings.helperLaborRate = numberOrZero(job.helperLaborRate);
-  if (job.discountLaborRate !== undefined) state.settings.discountLaborRate = numberOrZero(job.discountLaborRate);
-  if (job.materialMarkupRate !== undefined) state.settings.materialMarkupRate = numberOrZero(job.materialMarkupRate);
-  if (job.rentalMarkupRate !== undefined) state.settings.rentalMarkupRate = numberOrZero(job.rentalMarkupRate);
-  if (job.creditCardFeeRate !== undefined) state.settings.creditCardFeeRate = numberOrZero(job.creditCardFeeRate);
+  state.jobPricingOverride = {
+    defaultLaborRate: numberOrZero(job.defaultLaborRate),
+    helperLaborRate: numberOrZero(job.helperLaborRate),
+    discountLaborRate: numberOrZero(job.discountLaborRate),
+    materialMarkupRate: numberOrZero(job.materialMarkupRate),
+    rentalMarkupRate: numberOrZero(job.rentalMarkupRate),
+    creditCardFeeRate: numberOrZero(job.creditCardFeeRate)
+  };
 
   saveState();
   renderHeaderFields();
@@ -382,6 +459,7 @@ function loadSavedJobIntoDraft(job) {
 
 function snapshotCurrentJob() {
   const sum = calcSummary();
+  const effective = getEffectiveSettings();
   return {
     jobId: state.draft.jobId,
     updatedAt: new Date().toISOString(),
@@ -390,14 +468,14 @@ function snapshotCurrentJob() {
     defaultLaborHours: sum.defaultHours,
     helperLaborHours: sum.helperHours,
     discountLaborHours: sum.discountHours,
-    defaultLaborRate: numberOrZero(state.settings.defaultLaborRate),
-    helperLaborRate: numberOrZero(state.settings.helperLaborRate),
-    discountLaborRate: numberOrZero(state.settings.discountLaborRate),
+    defaultLaborRate: numberOrZero(effective.defaultLaborRate),
+    helperLaborRate: numberOrZero(effective.helperLaborRate),
+    discountLaborRate: numberOrZero(effective.discountLaborRate),
     baseMaterialCost: sum.baseMaterialCost,
     baseRentalCost: sum.baseRentalCost,
-    materialMarkupRate: numberOrZero(state.settings.materialMarkupRate),
-    rentalMarkupRate: numberOrZero(state.settings.rentalMarkupRate),
-    creditCardFeeRate: numberOrZero(state.settings.creditCardFeeRate),
+    materialMarkupRate: numberOrZero(effective.materialMarkupRate),
+    rentalMarkupRate: numberOrZero(effective.rentalMarkupRate),
+    creditCardFeeRate: numberOrZero(effective.creditCardFeeRate),
     totalDefaultLaborCost: sum.totalDefaultLaborCost,
     totalHelperLaborCost: sum.totalHelperLaborCost,
     totalDiscountLaborCost: sum.totalDiscountLaborCost,
@@ -415,7 +493,8 @@ function renderSavedJobs() {
   const list = document.getElementById("saved-list");
   list.innerHTML = "";
 
-  state.savedJobs.forEach((job) => {
+  const jobs = getUserJobs();
+  jobs.forEach((job) => {
     const item = document.createElement("button");
     item.className = "list-item";
     item.innerHTML = `
@@ -427,11 +506,11 @@ function renderSavedJobs() {
     list.appendChild(item);
   });
 
-  document.getElementById("saved-count").textContent = `${state.savedJobs.length} saved job record(s)`;
+  document.getElementById("saved-count").textContent = `${jobs.length} saved job record(s)`;
 }
 
 function openSavedDetail(jobId) {
-  const job = state.savedJobs.find((j) => j.jobId === jobId);
+  const job = getUserJobs().find((j) => j.jobId === jobId);
   if (!job) return;
 
   state.activeDetailJobId = jobId;
@@ -461,7 +540,8 @@ function toCsvCell(value) {
 }
 
 function exportCsv() {
-  if (!state.savedJobs.length) {
+  const jobs = getUserJobs();
+  if (!jobs.length) {
     alert("No saved jobs to export.");
     return;
   }
@@ -477,7 +557,7 @@ function exportCsv() {
     "Sub Total", "CC Fee", "Grand Total"
   ];
 
-  const rows = state.savedJobs.map((job) => [
+  const rows = jobs.map((job) => [
     job.jobId,
     new Date(job.createdDate).toISOString(),
     job.clientName,
@@ -526,32 +606,38 @@ function bindInputs() {
 
   document.getElementById("setting-default-rate").addEventListener("input", (e) => {
     state.settings.defaultLaborRate = numberOrZero(e.target.value);
+    touchSettingsUpdatedAt();
     saveState();
     renderSummary();
   });
   document.getElementById("setting-helper-rate").addEventListener("input", (e) => {
     state.settings.helperLaborRate = numberOrZero(e.target.value);
+    touchSettingsUpdatedAt();
     saveState();
     renderSummary();
   });
   document.getElementById("setting-discount-rate").addEventListener("input", (e) => {
     state.settings.discountLaborRate = numberOrZero(e.target.value);
+    touchSettingsUpdatedAt();
     saveState();
     renderSummary();
   });
 
   document.getElementById("setting-material-markup").addEventListener("input", (e) => {
     state.settings.materialMarkupRate = numberOrZero(e.target.value);
+    touchSettingsUpdatedAt();
     saveState();
     renderSummary();
   });
   document.getElementById("setting-rental-markup").addEventListener("input", (e) => {
     state.settings.rentalMarkupRate = numberOrZero(e.target.value);
+    touchSettingsUpdatedAt();
     saveState();
     renderSummary();
   });
   document.getElementById("setting-cc-fee").addEventListener("input", (e) => {
     state.settings.creditCardFeeRate = numberOrZero(e.target.value);
+    touchSettingsUpdatedAt();
     saveState();
     renderSummary();
   });
@@ -581,10 +667,11 @@ function bindInputs() {
 
     // Clear Main for next entry; Edit Job restores this saved record.
     state.draft = makeDraft();
+    state.jobPricingOverride = null;
     saveState();
     renderHeaderFields();
     renderAllRows();
-    renderMainTotals(calcSummary(), state.settings);
+    renderMainTotals(calcSummary(), getEffectiveSettings());
 
     void syncCloud();
   });
@@ -606,6 +693,7 @@ function bindInputs() {
 
   document.getElementById("new-job").addEventListener("click", () => {
     state.draft = makeDraft();
+    state.jobPricingOverride = null;
     saveState();
     renderHeaderFields();
     renderAllRows();
@@ -643,10 +731,11 @@ function bindInputs() {
     void syncCloud(true);
   });
   document.getElementById("clear-saved").addEventListener("click", () => {
-    if (!state.savedJobs.length) return;
+    const jobs = getUserJobs();
+    if (!jobs.length) return;
     const ok = confirm("Clear all saved jobs?");
     if (!ok) return;
-    state.savedJobs = [];
+    state.savedJobs = state.savedJobs.filter((job) => isSettingsRecord(job));
     saveState();
     renderSavedJobs();
     state.activeDetailJobId = null;
@@ -686,16 +775,11 @@ async function syncCloud(showAlert = false) {
     return;
   }
 
-  const payloadBody = JSON.stringify({
-    key,
-    jobs: state.savedJobs
-  });
-
-  async function tryPost(url) {
+  async function tryPost(url, body) {
     return fetch(url, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: payloadBody,
+      body,
       cache: "no-store",
       credentials: "omit",
       mode: "cors",
@@ -704,7 +788,13 @@ async function syncCloud(showAlert = false) {
   }
 
   try {
-    let response = await tryPost(endpoint);
+    upsertSettingsRecord();
+    const payloadBody = JSON.stringify({
+      key,
+      jobs: state.savedJobs
+    });
+
+    let response = await tryPost(endpoint, payloadBody);
     // iOS Safari can fail POST redirects from /exec; fallback to resolved final URL.
     if (!response.ok) {
       const resolve = await fetch(endpoint, {
@@ -715,7 +805,7 @@ async function syncCloud(showAlert = false) {
         redirect: "follow"
       });
       if (resolve.ok && resolve.url && resolve.url !== endpoint) {
-        response = await tryPost(resolve.url);
+        response = await tryPost(resolve.url, payloadBody);
       }
     }
 
@@ -723,7 +813,11 @@ async function syncCloud(showAlert = false) {
     const payload = await response.json();
     const remoteJobs = Array.isArray(payload.jobs) ? payload.jobs : [];
     state.savedJobs = mergeJobs(state.savedJobs, remoteJobs);
+    applySettingsFromSyncedRecord();
+    upsertSettingsRecord();
     saveState();
+    renderHeaderFields();
+    renderSummary();
     renderSavedJobs();
     if (showAlert) alert("Cloud sync completed.");
   } catch (err) {

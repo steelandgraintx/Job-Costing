@@ -11,7 +11,6 @@
 <body>
   <header class="app-header">
     <h1>Job Costing</h1>
-    <p>Field entry and reporting</p>
   </header>
 
   <nav class="tabs" aria-label="Main navigation">
@@ -29,43 +28,57 @@
         </label>
       </div>
 
-      <div class="card">
-        <h2>Default Labor @ <span id="main-default-rate-label"></span></h2>
-        <p class="section-total" id="main-default-labor"></p>
-        <table>
-          <tbody id="default-labor-body"></tbody>
-        </table>
+      <div class="card labor-group">
+        <h2>Labor</h2>
+
+        <div class="labor-type">
+          <div class="entry-title-row">
+            <h3>Default (<span id="main-default-rate-label"></span>)</h3>
+            <strong id="main-default-labor"></strong>
+          </div>
+          <table>
+            <tbody id="default-labor-body"></tbody>
+          </table>
+        </div>
+
+        <div class="labor-type">
+          <div class="entry-title-row">
+            <h3>With Helper (<span id="main-helper-rate-label"></span>)</h3>
+            <strong id="main-helper-labor"></strong>
+          </div>
+          <table>
+            <tbody id="helper-labor-body"></tbody>
+          </table>
+        </div>
+
+        <div class="labor-type">
+          <div class="entry-title-row">
+            <h3>Discount (<span id="main-discount-rate-label"></span>)</h3>
+            <strong id="main-discount-labor"></strong>
+          </div>
+          <table>
+            <tbody id="discount-labor-body"></tbody>
+          </table>
+        </div>
       </div>
 
       <div class="card">
-        <h2>With Helper Labor @ <span id="main-helper-rate-label"></span></h2>
-        <p class="section-total" id="main-helper-labor"></p>
-        <table>
-          <tbody id="helper-labor-body"></tbody>
-        </table>
-      </div>
-
-      <div class="card">
-        <h2>Discount Labor @ <span id="main-discount-rate-label"></span></h2>
-        <p class="section-total" id="main-discount-labor"></p>
-        <table>
-          <tbody id="discount-labor-body"></tbody>
-        </table>
-      </div>
-
-      <div class="card">
-        <h2>Material Cost</h2>
-        <p class="section-total">With Markup: <strong id="main-material-markup"></strong></p>
-        <p class="section-subtotal">Subtotal: <span id="main-material-base"></span></p>
+        <div class="entry-title-row">
+          <h2>Materials</h2>
+          <span class="inline-subtotal">Subtotal: <span id="main-material-base"></span></span>
+        </div>
+        <p class="section-subtotal">With Markup: <strong id="main-material-markup"></strong></p>
         <table>
           <tbody id="material-body"></tbody>
         </table>
       </div>
 
       <div class="card">
-        <h2>Rental Cost</h2>
-        <p class="section-total">With Markup: <strong id="main-rental-markup"></strong></p>
-        <p class="section-subtotal">Subtotal: <span id="main-rental-base"></span></p>
+        <div class="entry-title-row">
+          <h2>Rentals</h2>
+          <span class="inline-subtotal">Subtotal: <span id="main-rental-base"></span></span>
+        </div>
+        <p class="section-subtotal">With Markup: <strong id="main-rental-markup"></strong></p>
         <table>
           <tbody id="rental-body"></tbody>
         </table>

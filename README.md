@@ -1,7 +1,7 @@
 # Job Costing PWA
 
 This is an installable web app for iPhone/iPad/desktop with:
-- Editable Settings (material markup, rental markup, CC fee)
+- Editable Settings (labor rates, material/rental markup, CC fee)
 - Main job entry form (multi-line labor/material/rental, no descriptions)
 - New blank line auto-appears as values are entered (no Add Line buttons)
 - Dynamic totals on Main (labor category totals + total labor, materials/rentals with and without markup)
@@ -12,6 +12,7 @@ This is an installable web app for iPhone/iPad/desktop with:
 - CSV export for spreadsheet reporting
 - Offline support (service worker)
 - Optional cross-device sync via cloud endpoint (see `CLOUD_SYNC.md`)
+- Settings sync across users/devices through cloud sync
 
 ## Run locally
 From `/Users/janet/Downloads/Codex/JobCostingPWA`:
@@ -32,12 +33,11 @@ Then open:
 ## Data and reporting
 - App data is stored in browser local storage on each device.
 - For shared owner/employee records across devices, configure cloud sync in `Settings` and follow `CLOUD_SYNC.md`.
-- Use `Save Job Record` on Summary tab to append report rows.
-- Use `Export CSV` on Saved Jobs tab to download spreadsheet-ready data.
+- Use `Calculate` to save/update records.
+- Use `Export CSV` on List tab to download spreadsheet-ready data.
 
 ## Notes
 - This is client-side only (no server database yet).
 - If phone browser data is cleared, saved records are removed.
 - Date and Job ID are still auto-generated/saved, but hidden on Main.
 - Labor rates are now editable only in the `Settings` tab.
-# Job-Costing
