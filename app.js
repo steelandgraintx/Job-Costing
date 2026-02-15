@@ -569,15 +569,39 @@ async function syncCloud(showAlert = false) {
     return;
   }
 
-  try {
-    const response = await fetch(endpoint, {
+  const payloadBody = JSON.stringify({
+    key,
+    jobs: state.savedJobs
+  });
+
+  async function tryPost(url) {
+    return fetch(url, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({
-        key,
-        jobs: state.savedJobs
-      })
+      body: payloadBody,
+      cache: "no-store",
+      credentials: "omit",
+      mode: "cors",
+      redirect: "follow"
     });
+  }
+
+  try {
+    let response = await tryPost(endpoint);
+    // iOS Safari can fail POST redirects from /exec; fallback to resolved final URL.
+    if (!response.ok) {
+      const resolve = await fetch(endpoint, {
+        method: "GET",
+        cache: "no-store",
+        credentials: "omit",
+        mode: "cors",
+        redirect: "follow"
+      });
+      if (resolve.ok && resolve.url && resolve.url !== endpoint) {
+        response = await tryPost(resolve.url);
+      }
+    }
+
     if (!response.ok) throw new Error(`Sync request failed (${response.status})`);
     const payload = await response.json();
     const remoteJobs = Array.isArray(payload.jobs) ? payload.jobs : [];
