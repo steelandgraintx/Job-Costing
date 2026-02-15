@@ -146,6 +146,8 @@ function renderLaborRows(tbodyId, listKey, fieldKey) {
     numInput.type = "number";
     numInput.step = "0.01";
     numInput.min = "0";
+    numInput.inputMode = "decimal";
+    numInput.setAttribute("enterkeyhint", "next");
     const rawValue = row[fieldKey];
     numInput.value = rawValue === undefined ? "" : rawValue;
     numInput.addEventListener("input", (e) => {
@@ -160,6 +162,8 @@ function renderLaborRows(tbodyId, listKey, fieldKey) {
         state.draft[listKey].push(fieldKey === "hours" ? { hours: "" } : { amount: "" });
         saveState();
         renderAllRows();
+        // Keep keyboard flow on iOS by moving focus to the next numeric input.
+        requestAnimationFrame(() => focusNextNumberInput(tbodyId, idx));
       }
     });
     tdNum.appendChild(numInput);
@@ -184,6 +188,14 @@ function renderLaborRows(tbodyId, listKey, fieldKey) {
     tr.appendChild(tdDelete);
     tbody.appendChild(tr);
   });
+}
+
+function focusNextNumberInput(tbodyId, currentIndex) {
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  const inputs = tbody.querySelectorAll('input[type="number"]');
+  const next = inputs[currentIndex + 1];
+  if (next) next.focus();
 }
 
 function renderCostRows(tbodyId, listKey) {
