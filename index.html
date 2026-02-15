@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Job Costing PWA</title>
+  <meta name="theme-color" content="#0b3d2e">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1>Job Costing</h1>
+    <p>Field entry and reporting</p>
+  </header>
+
+  <nav class="tabs" aria-label="Main navigation">
+    <button class="tab active" data-tab="main">Main</button>
+    <button class="tab" data-tab="summary">Summary</button>
+    <button class="tab" data-tab="saved">Saved Jobs</button>
+    <button class="tab" data-tab="settings">Settings</button>
+  </nav>
+
+  <main>
+    <section id="tab-main" class="panel active">
+      <div class="card">
+        <h2>Job Info</h2>
+        <div class="grid-2">
+          <label>Date
+            <input id="job-date" type="text" readonly>
+          </label>
+          <label>Job ID
+            <input id="job-id" type="text" readonly>
+          </label>
+        </div>
+        <label>Client Name
+          <input id="client-name" type="text" placeholder="Client name">
+        </label>
+      </div>
+
+      <div class="card">
+        <h2>Labor Rates</h2>
+        <div class="grid-3">
+          <label>Default Rate
+            <input id="default-rate" type="number" step="0.01" min="0">
+          </label>
+          <label>With Helper Rate
+            <input id="helper-rate" type="number" step="0.01" min="0">
+          </label>
+          <label>Discount Rate
+            <input id="discount-rate" type="number" step="0.01" min="0">
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Labor Hours @ Default Rate</h2>
+        <table>
+          <thead><tr><th>Description</th><th>Hours</th><th></th></tr></thead>
+          <tbody id="default-labor-body"></tbody>
+        </table>
+        <button id="add-default-labor" class="secondary">Add Line</button>
+      </div>
+
+      <div class="card">
+        <h2>Labor Hours @ With Helper Rate</h2>
+        <table>
+          <thead><tr><th>Description</th><th>Hours</th><th></th></tr></thead>
+          <tbody id="helper-labor-body"></tbody>
+        </table>
+        <button id="add-helper-labor" class="secondary">Add Line</button>
+      </div>
+
+      <div class="card">
+        <h2>Labor Hours @ Discount Rate</h2>
+        <table>
+          <thead><tr><th>Description</th><th>Hours</th><th></th></tr></thead>
+          <tbody id="discount-labor-body"></tbody>
+        </table>
+        <button id="add-discount-labor" class="secondary">Add Line</button>
+      </div>
+
+      <div class="card">
+        <h2>Material Cost</h2>
+        <table>
+          <thead><tr><th>Description</th><th>Cost</th><th></th></tr></thead>
+          <tbody id="material-body"></tbody>
+        </table>
+        <button id="add-material" class="secondary">Add Line</button>
+      </div>
+
+      <div class="card">
+        <h2>Rental Cost</h2>
+        <table>
+          <thead><tr><th>Description</th><th>Cost</th><th></th></tr></thead>
+          <tbody id="rental-body"></tbody>
+        </table>
+        <button id="add-rental" class="secondary">Add Line</button>
+      </div>
+    </section>
+
+    <section id="tab-summary" class="panel">
+      <div class="card">
+        <h2>Summary</h2>
+        <div class="summary-row"><span>Total Default Labor Cost</span><strong id="sum-default-labor"></strong></div>
+        <div class="summary-row"><span>Total Helper Labor Cost</span><strong id="sum-helper-labor"></strong></div>
+        <div class="summary-row"><span>Total Discount Labor Cost</span><strong id="sum-discount-labor"></strong></div>
+        <div class="summary-row"><span>Total Labor Cost (all types)</span><strong id="sum-labor"></strong></div>
+        <div class="summary-row"><span>Total Material Cost (with markup)</span><strong id="sum-material"></strong></div>
+        <div class="summary-row"><span>Total Rental Cost (with markup)</span><strong id="sum-rental"></strong></div>
+        <div class="summary-row"><span>Sub Total</span><strong id="sum-subtotal"></strong></div>
+        <div class="summary-row"><span>CC Fee</span><strong id="sum-cc"></strong></div>
+        <div class="summary-row total"><span>Grand Total</span><strong id="sum-grand"></strong></div>
+      </div>
+      <div class="card actions">
+        <button id="save-job">Save Job Record</button>
+        <button id="new-job" class="secondary">Start New Job</button>
+      </div>
+    </section>
+
+    <section id="tab-saved" class="panel">
+      <div class="card">
+        <h2>Saved Jobs</h2>
+        <p id="saved-count"></p>
+        <div class="table-wrap">
+          <table id="saved-table">
+            <thead>
+              <tr>
+                <th>Job ID</th>
+                <th>Date</th>
+                <th>Client</th>
+                <th>Grand Total</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="saved-body"></tbody>
+          </table>
+        </div>
+        <div class="actions-inline">
+          <button id="export-csv">Export CSV</button>
+          <button id="clear-saved" class="danger">Clear All</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-settings" class="panel">
+      <div class="card">
+        <h2>Settings (editable)</h2>
+        <label>Material Markup Rate
+          <input id="setting-material-markup" type="number" step="0.0001" min="0">
+        </label>
+        <label>Rental Markup Rate
+          <input id="setting-rental-markup" type="number" step="0.0001" min="0">
+        </label>
+        <label>Credit Card Fee Rate
+          <input id="setting-cc-fee" type="number" step="0.0001" min="0">
+        </label>
+        <p class="hint">Example: 15% = 0.15, 3% = 0.03</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
