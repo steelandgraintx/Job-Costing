@@ -15,11 +15,11 @@ function makeDraft() {
     clientName: "",
     createdDate: now.toISOString(),
     jobId: makeJobId(now),
-    defaultLabor: [{ description: "", hours: 0 }],
-    helperLabor: [{ description: "", hours: 0 }],
-    discountLabor: [{ description: "", hours: 0 }],
-    materialCosts: [{ description: "", amount: 0 }],
-    rentalCosts: [{ description: "", amount: 0 }]
+    defaultLabor: [{ hours: "" }],
+    helperLabor: [{ hours: "" }],
+    discountLabor: [{ hours: "" }],
+    materialCosts: [{ amount: "" }],
+    rentalCosts: [{ amount: "" }]
   };
 }
 
@@ -143,11 +143,21 @@ function renderLaborRows(tbodyId, listKey, fieldKey) {
     numInput.type = "number";
     numInput.step = "0.01";
     numInput.min = "0";
-    numInput.value = numberOrZero(row[fieldKey]);
+    const rawValue = row[fieldKey];
+    numInput.value = rawValue === undefined ? "" : rawValue;
     numInput.addEventListener("input", (e) => {
-      state.draft[listKey][idx][fieldKey] = numberOrZero(e.target.value);
+      const raw = e.target.value;
+      state.draft[listKey][idx][fieldKey] = raw === "" ? "" : numberOrZero(raw);
       saveState();
       renderSummary();
+    });
+    numInput.addEventListener("change", () => {
+      const raw = state.draft[listKey][idx][fieldKey];
+      if (raw !== "" && idx === state.draft[listKey].length - 1) {
+        state.draft[listKey].push(fieldKey === "hours" ? { hours: "" } : { amount: "" });
+        saveState();
+        renderAllRows();
+      }
     });
     tdNum.appendChild(numInput);
 
@@ -159,7 +169,7 @@ function renderLaborRows(tbodyId, listKey, fieldKey) {
     deleteBtn.addEventListener("click", () => {
       state.draft[listKey].splice(idx, 1);
       if (state.draft[listKey].length === 0) {
-        state.draft[listKey].push(fieldKey === "hours" ? { description: "", hours: 0 } : { description: "", amount: 0 });
+        state.draft[listKey].push(fieldKey === "hours" ? { hours: "" } : { amount: "" });
       }
       saveState();
       renderAllRows();
@@ -186,7 +196,7 @@ function renderAllRows() {
 }
 
 function addRow(listKey, fieldKey) {
-  state.draft[listKey].push(fieldKey === "hours" ? { description: "", hours: 0 } : { description: "", amount: 0 });
+  state.draft[listKey].push(fieldKey === "hours" ? { hours: "" } : { amount: "" });
   saveState();
   renderAllRows();
 }
@@ -210,10 +220,12 @@ function renderSummary() {
   const rateToLabel = (rate) => `${money.format(numberOrZero(rate))}/hr`;
   const percentLabel = (rate) => `${(numberOrZero(rate) * 100).toFixed(2)}%`;
 
+  document.getElementById("main-default-rate-label").textContent = rateToLabel(settings.defaultLaborRate);
+  document.getElementById("main-helper-rate-label").textContent = rateToLabel(settings.helperLaborRate);
+  document.getElementById("main-discount-rate-label").textContent = rateToLabel(settings.discountLaborRate);
   document.getElementById("main-default-labor").textContent = money.format(sum.totalDefaultLaborCost);
   document.getElementById("main-helper-labor").textContent = money.format(sum.totalHelperLaborCost);
   document.getElementById("main-discount-labor").textContent = money.format(sum.totalDiscountLaborCost);
-  document.getElementById("main-total-labor").textContent = money.format(sum.totalLaborCost);
   document.getElementById("main-material-base").textContent = money.format(sum.baseMaterialCost);
   document.getElementById("main-material-markup").textContent = money.format(sum.totalMaterialCostWithMarkup);
   document.getElementById("main-rental-base").textContent = money.format(sum.baseRentalCost);
@@ -406,12 +418,6 @@ function bindInputs() {
     saveState();
     renderSummary();
   });
-
-  document.getElementById("add-default-labor").addEventListener("click", () => addRow("defaultLabor", "hours"));
-  document.getElementById("add-helper-labor").addEventListener("click", () => addRow("helperLabor", "hours"));
-  document.getElementById("add-discount-labor").addEventListener("click", () => addRow("discountLabor", "hours"));
-  document.getElementById("add-material").addEventListener("click", () => addRow("materialCosts", "amount"));
-  document.getElementById("add-rental").addEventListener("click", () => addRow("rentalCosts", "amount"));
 
   document.getElementById("calculate-job").addEventListener("click", () => {
     const snapshot = snapshotCurrentJob();

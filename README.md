@@ -3,6 +3,7 @@
 This is an installable web app for iPhone/iPad/desktop with:
 - Editable Settings (material markup, rental markup, CC fee)
 - Main job entry form (multi-line labor/material/rental, no descriptions)
+- New blank line auto-appears as values are entered (no Add Line buttons)
 - Dynamic totals on Main (labor category totals + total labor, materials/rentals with and without markup)
 - `Calculate` button on Main saves/updates the job record and opens Summary
 - Summary calculations

@@ -31,60 +31,45 @@
       </div>
 
       <div class="card">
-        <h2>Default Labor Hours @ Rate</h2>
+        <h2>Default Labor @ <span id="main-default-rate-label"></span></h2>
+        <p class="section-total" id="main-default-labor"></p>
         <table>
-          <thead><tr><th>Hours</th><th></th></tr></thead>
           <tbody id="default-labor-body"></tbody>
         </table>
-        <button id="add-default-labor" class="secondary">Add Line</button>
       </div>
 
       <div class="card">
-        <h2>With Helper Labor Hours @ Rate</h2>
+        <h2>With Helper Labor @ <span id="main-helper-rate-label"></span></h2>
+        <p class="section-total" id="main-helper-labor"></p>
         <table>
-          <thead><tr><th>Hours</th><th></th></tr></thead>
           <tbody id="helper-labor-body"></tbody>
         </table>
-        <button id="add-helper-labor" class="secondary">Add Line</button>
       </div>
 
       <div class="card">
-        <h2>Discount Labor Hours @ Rate</h2>
+        <h2>Discount Labor @ <span id="main-discount-rate-label"></span></h2>
+        <p class="section-total" id="main-discount-labor"></p>
         <table>
-          <thead><tr><th>Hours</th><th></th></tr></thead>
           <tbody id="discount-labor-body"></tbody>
         </table>
-        <button id="add-discount-labor" class="secondary">Add Line</button>
       </div>
 
       <div class="card">
         <h2>Material Cost</h2>
+        <p class="section-total">With Markup: <strong id="main-material-markup"></strong></p>
+        <p class="section-subtotal">Subtotal: <span id="main-material-base"></span></p>
         <table>
-          <thead><tr><th>Cost</th><th></th></tr></thead>
           <tbody id="material-body"></tbody>
         </table>
-        <button id="add-material" class="secondary">Add Line</button>
       </div>
 
       <div class="card">
         <h2>Rental Cost</h2>
+        <p class="section-total">With Markup: <strong id="main-rental-markup"></strong></p>
+        <p class="section-subtotal">Subtotal: <span id="main-rental-base"></span></p>
         <table>
-          <thead><tr><th>Cost</th><th></th></tr></thead>
           <tbody id="rental-body"></tbody>
         </table>
-        <button id="add-rental" class="secondary">Add Line</button>
-      </div>
-
-      <div class="card">
-        <h2>Live Totals</h2>
-        <div class="summary-row"><span>Default Labor</span><strong id="main-default-labor"></strong></div>
-        <div class="summary-row"><span>With Helper Labor</span><strong id="main-helper-labor"></strong></div>
-        <div class="summary-row"><span>Discount Labor</span><strong id="main-discount-labor"></strong></div>
-        <div class="summary-row"><span>Total Labor</span><strong id="main-total-labor"></strong></div>
-        <div class="summary-row"><span>Materials (No Markup)</span><strong id="main-material-base"></strong></div>
-        <div class="summary-row"><span>Materials (With Markup)</span><strong id="main-material-markup"></strong></div>
-        <div class="summary-row"><span>Rentals (No Markup)</span><strong id="main-rental-base"></strong></div>
-        <div class="summary-row"><span>Rentals (With Markup)</span><strong id="main-rental-markup"></strong></div>
       </div>
 
       <div class="card actions">
