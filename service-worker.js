@@ -1,11 +1,12 @@
-const CACHE_NAME = "job-costing-pwa-v5";
+const CACHE_NAME = "job-costing-pwa-v6";
 const URLS = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
   "./manifest.webmanifest",
-  "./icon.svg"
+  "./icon.svg",
+  "./CLOUD_SYNC.md"
 ];
 
 self.addEventListener("install", (event) => {

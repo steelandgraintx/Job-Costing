@@ -30,7 +30,9 @@ const state = {
     discountLaborRate: 65,
     materialMarkupRate: 0.15,
     rentalMarkupRate: 0.10,
-    creditCardFeeRate: 0.03
+    creditCardFeeRate: 0.03,
+    syncEndpoint: "",
+    syncKey: ""
   },
   draft: makeDraft(),
   savedJobs: []
@@ -211,6 +213,8 @@ function renderHeaderFields() {
   document.getElementById("setting-material-markup").value = numberOrZero(state.settings.materialMarkupRate);
   document.getElementById("setting-rental-markup").value = numberOrZero(state.settings.rentalMarkupRate);
   document.getElementById("setting-cc-fee").value = numberOrZero(state.settings.creditCardFeeRate);
+  document.getElementById("setting-sync-endpoint").value = state.settings.syncEndpoint || "";
+  document.getElementById("setting-sync-key").value = state.settings.syncKey || "";
 }
 
 function renderSummary() {
@@ -258,6 +262,7 @@ function snapshotCurrentJob() {
   const sum = calcSummary();
   return {
     jobId: state.draft.jobId,
+    updatedAt: new Date().toISOString(),
     createdDate: state.draft.createdDate,
     clientName: state.draft.clientName,
     defaultLaborHours: sum.defaultHours,
@@ -418,6 +423,14 @@ function bindInputs() {
     saveState();
     renderSummary();
   });
+  document.getElementById("setting-sync-endpoint").addEventListener("input", (e) => {
+    state.settings.syncEndpoint = (e.target.value || "").trim();
+    saveState();
+  });
+  document.getElementById("setting-sync-key").addEventListener("input", (e) => {
+    state.settings.syncKey = (e.target.value || "").trim();
+    saveState();
+  });
 
   document.getElementById("calculate-job").addEventListener("click", () => {
     const snapshot = snapshotCurrentJob();
@@ -431,6 +444,7 @@ function bindInputs() {
     renderSavedJobs();
     renderSummary();
     setActiveTab("summary");
+    void syncCloud();
   });
 
   document.getElementById("edit-job").addEventListener("click", () => {
@@ -447,6 +461,9 @@ function bindInputs() {
   });
 
   document.getElementById("export-csv").addEventListener("click", exportCsv);
+  document.getElementById("sync-cloud").addEventListener("click", () => {
+    void syncCloud(true);
+  });
   document.getElementById("clear-saved").addEventListener("click", () => {
     if (!state.savedJobs.length) return;
     const ok = confirm("Clear all saved jobs?");
@@ -455,6 +472,54 @@ function bindInputs() {
     saveState();
     renderSavedJobs();
   });
+}
+
+function mergeJobs(localJobs, remoteJobs) {
+  const map = new Map();
+  const add = (job) => {
+    if (!job || !job.jobId) return;
+    const existing = map.get(job.jobId);
+    if (!existing) {
+      map.set(job.jobId, job);
+      return;
+    }
+    const existingTime = Date.parse(existing.updatedAt || existing.createdDate || 0);
+    const incomingTime = Date.parse(job.updatedAt || job.createdDate || 0);
+    map.set(job.jobId, incomingTime >= existingTime ? job : existing);
+  };
+
+  localJobs.forEach(add);
+  remoteJobs.forEach(add);
+  return [...map.values()].sort((a, b) => Date.parse(b.createdDate || 0) - Date.parse(a.createdDate || 0));
+}
+
+async function syncCloud(showAlert = false) {
+  const endpoint = (state.settings.syncEndpoint || "").trim();
+  const key = (state.settings.syncKey || "").trim();
+  if (!endpoint || !key) {
+    if (showAlert) alert("Set Sync Endpoint URL and Sync Key in Settings first.");
+    return;
+  }
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        key,
+        jobs: state.savedJobs
+      })
+    });
+    if (!response.ok) throw new Error("Sync request failed");
+    const payload = await response.json();
+    const remoteJobs = Array.isArray(payload.jobs) ? payload.jobs : [];
+    state.savedJobs = mergeJobs(state.savedJobs, remoteJobs);
+    saveState();
+    renderSavedJobs();
+    if (showAlert) alert("Cloud sync completed.");
+  } catch (err) {
+    if (showAlert) alert("Cloud sync failed. Check endpoint URL and key.");
+  }
 }
 
 function registerServiceWorker() {
@@ -474,6 +539,7 @@ function init() {
   renderSummary();
   renderSavedJobs();
   registerServiceWorker();
+  void syncCloud();
 }
 
 init();

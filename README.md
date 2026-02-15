@@ -10,6 +10,7 @@ This is an installable web app for iPhone/iPad/desktop with:
 - Saved jobs table for reporting
 - CSV export for spreadsheet reporting
 - Offline support (service worker)
+- Optional cross-device sync via cloud endpoint (see `CLOUD_SYNC.md`)
 
 ## Run locally
 From `/Users/janet/Downloads/Codex/JobCostingPWA`:
@@ -29,6 +30,7 @@ Then open:
 
 ## Data and reporting
 - App data is stored in browser local storage on each device.
+- For shared owner/employee records across devices, configure cloud sync in `Settings` and follow `CLOUD_SYNC.md`.
 - Use `Save Job Record` on Summary tab to append report rows.
 - Use `Export CSV` on Saved Jobs tab to download spreadsheet-ready data.
 
