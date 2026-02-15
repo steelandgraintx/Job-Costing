@@ -260,6 +260,9 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .modal.hidden {
   display: none;
 }
+.is-hidden {
+  display: none !important;
+}
 .modal-card {
   width: 100%;
   max-width: 640px;

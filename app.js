@@ -43,7 +43,8 @@ const state = {
   savedJobs: [],
   lastCalculatedJobId: null,
   activeDetailJobId: null,
-  jobPricingOverride: null
+  jobPricingOverride: null,
+  isEditingSavedJob: false
 };
 
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
@@ -322,6 +323,8 @@ function addRow(listKey, fieldKey) {
 function renderHeaderFields() {
   const d = state.draft;
   document.getElementById("client-name").value = d.clientName || "";
+  document.getElementById("entry-default-rate").value = numberOrZero(d.defaultLaborRate);
+  document.getElementById("entry-helper-rate").value = numberOrZero(d.helperLaborRate);
   document.getElementById("entry-other-rate").value = numberOrZero(d.discountLaborRate);
 
   document.getElementById("setting-default-rate").value = numberOrZero(state.settings.defaultLaborRate);
@@ -332,6 +335,21 @@ function renderHeaderFields() {
   document.getElementById("setting-cc-fee").value = numberOrZero(state.settings.creditCardFeeRate);
   document.getElementById("setting-sync-endpoint").value = state.settings.syncEndpoint || "";
   document.getElementById("setting-sync-key").value = state.settings.syncKey || "";
+  updateEntryRateEditability();
+}
+
+function updateEntryRateEditability() {
+  const defaultWrap = document.getElementById("entry-default-rate-wrap");
+  const helperWrap = document.getElementById("entry-helper-rate-wrap");
+  if (!defaultWrap || !helperWrap) return;
+
+  if (state.isEditingSavedJob) {
+    defaultWrap.classList.remove("is-hidden");
+    helperWrap.classList.remove("is-hidden");
+  } else {
+    defaultWrap.classList.add("is-hidden");
+    helperWrap.classList.add("is-hidden");
+  }
 }
 
 function renderMainTotals(sum, settings) {
@@ -460,6 +478,7 @@ function loadSavedJobIntoDraft(job) {
     rentalMarkupRate: numberOrZero(job.rentalMarkupRate),
     creditCardFeeRate: numberOrZero(job.creditCardFeeRate)
   };
+  state.isEditingSavedJob = true;
 
   saveState();
   renderHeaderFields();
@@ -616,6 +635,16 @@ function bindInputs() {
     state.draft.clientName = e.target.value;
     saveState();
   });
+  document.getElementById("entry-default-rate").addEventListener("input", (e) => {
+    state.draft.defaultLaborRate = numberOrZero(e.target.value);
+    saveState();
+    renderSummary();
+  });
+  document.getElementById("entry-helper-rate").addEventListener("input", (e) => {
+    state.draft.helperLaborRate = numberOrZero(e.target.value);
+    saveState();
+    renderSummary();
+  });
   document.getElementById("entry-other-rate").addEventListener("input", (e) => {
     state.draft.discountLaborRate = numberOrZero(e.target.value);
     saveState();
@@ -686,6 +715,7 @@ function bindInputs() {
     // Clear Main for next entry; Edit Job restores this saved record.
     state.draft = makeDraft(state.settings);
     state.jobPricingOverride = null;
+    state.isEditingSavedJob = false;
     saveState();
     renderHeaderFields();
     renderAllRows();
@@ -712,6 +742,7 @@ function bindInputs() {
   document.getElementById("new-job").addEventListener("click", () => {
     state.draft = makeDraft(state.settings);
     state.jobPricingOverride = null;
+    state.isEditingSavedJob = false;
     saveState();
     renderHeaderFields();
     renderAllRows();
