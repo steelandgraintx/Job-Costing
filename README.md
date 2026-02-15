@@ -3,6 +3,7 @@
 This is an installable web app for iPhone/iPad/desktop with:
 - Editable Settings (labor rates, material/rental markup, CC fee)
 - Main job entry form (multi-line labor/material/rental, no descriptions)
+- Entry labor rates are prefilled from Settings and editable per job
 - New blank line auto-appears as values are entered (no Add Line buttons)
 - Dynamic totals on Main (labor category totals + total labor, materials/rentals with and without markup)
 - `Calculate` on Entry saves/updates the job record and opens a Summary modal
@@ -13,6 +14,7 @@ This is an installable web app for iPhone/iPad/desktop with:
 - Offline support (service worker)
 - Optional cross-device sync via cloud endpoint (see `CLOUD_SYNC.md`)
 - Settings sync across users/devices through cloud sync
+- Historical jobs keep their saved pricing when edited
 
 ## Run locally
 From `/Users/janet/Downloads/Codex/JobCostingPWA`:

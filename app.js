@@ -10,12 +10,15 @@ function makeJobId(date) {
   return `JOB-${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
 }
 
-function makeDraft() {
+function makeDraft(settings = {}) {
   const now = new Date();
   return {
     clientName: "",
     createdDate: now.toISOString(),
     jobId: makeJobId(now),
+    defaultLaborRate: numberOrZero(settings.defaultLaborRate || 85),
+    helperLaborRate: numberOrZero(settings.helperLaborRate || 120),
+    discountLaborRate: numberOrZero(settings.discountLaborRate || 65),
     defaultLabor: [{ hours: "" }],
     helperLabor: [{ hours: "" }],
     discountLabor: [{ hours: "" }],
@@ -55,10 +58,15 @@ function sumBy(items, field) {
 }
 
 function getEffectiveSettings() {
-  if (!state.jobPricingOverride) return state.settings;
-  return {
+  const base = state.jobPricingOverride ? {
     ...state.settings,
     ...state.jobPricingOverride
+  } : state.settings;
+  return {
+    ...base,
+    defaultLaborRate: numberOrZero(state.draft.defaultLaborRate),
+    helperLaborRate: numberOrZero(state.draft.helperLaborRate),
+    discountLaborRate: numberOrZero(state.draft.discountLaborRate)
   };
 }
 
@@ -131,6 +139,9 @@ function loadState() {
   if (!state.settings.settingsUpdatedAt) {
     touchSettingsUpdatedAt();
   }
+  if (state.draft.defaultLaborRate === undefined) state.draft.defaultLaborRate = numberOrZero(state.settings.defaultLaborRate);
+  if (state.draft.helperLaborRate === undefined) state.draft.helperLaborRate = numberOrZero(state.settings.helperLaborRate);
+  if (state.draft.discountLaborRate === undefined) state.draft.discountLaborRate = numberOrZero(state.settings.discountLaborRate);
   upsertSettingsRecord();
   applySettingsFromSyncedRecord();
 }
@@ -311,6 +322,7 @@ function addRow(listKey, fieldKey) {
 function renderHeaderFields() {
   const d = state.draft;
   document.getElementById("client-name").value = d.clientName || "";
+  document.getElementById("entry-other-rate").value = numberOrZero(d.discountLaborRate);
 
   document.getElementById("setting-default-rate").value = numberOrZero(state.settings.defaultLaborRate);
   document.getElementById("setting-helper-rate").value = numberOrZero(state.settings.helperLaborRate);
@@ -324,10 +336,8 @@ function renderHeaderFields() {
 
 function renderMainTotals(sum, settings) {
   const rateToLabel = (rate) => `${money.format(numberOrZero(rate))}`;
-
   document.getElementById("main-default-rate-label").textContent = rateToLabel(settings.defaultLaborRate);
   document.getElementById("main-helper-rate-label").textContent = rateToLabel(settings.helperLaborRate);
-  document.getElementById("main-discount-rate-label").textContent = rateToLabel(settings.discountLaborRate);
   document.getElementById("main-default-labor").textContent = money.format(sum.totalDefaultLaborCost);
   document.getElementById("main-helper-labor").textContent = money.format(sum.totalHelperLaborCost);
   document.getElementById("main-discount-labor").textContent = money.format(sum.totalDiscountLaborCost);
@@ -412,6 +422,9 @@ function buildDraftPayload() {
     clientName: state.draft.clientName || "",
     createdDate: state.draft.createdDate,
     jobId: state.draft.jobId,
+    defaultLaborRate: numberOrZero(state.draft.defaultLaborRate),
+    helperLaborRate: numberOrZero(state.draft.helperLaborRate),
+    discountLaborRate: numberOrZero(state.draft.discountLaborRate),
     defaultLabor: ensureRows(state.draft.defaultLabor, "hours"),
     helperLabor: ensureRows(state.draft.helperLabor, "hours"),
     discountLabor: ensureRows(state.draft.discountLabor, "hours"),
@@ -432,6 +445,9 @@ function loadSavedJobIntoDraft(job) {
     clientName: d.clientName || "",
     createdDate: d.createdDate || new Date().toISOString(),
     jobId: d.jobId || makeJobId(new Date()),
+    defaultLaborRate: numberOrZero(d.defaultLaborRate !== undefined ? d.defaultLaborRate : job.defaultLaborRate),
+    helperLaborRate: numberOrZero(d.helperLaborRate !== undefined ? d.helperLaborRate : job.helperLaborRate),
+    discountLaborRate: numberOrZero(d.discountLaborRate !== undefined ? d.discountLaborRate : job.discountLaborRate),
     defaultLabor: ensureRows(d.defaultLabor, "hours"),
     helperLabor: ensureRows(d.helperLabor, "hours"),
     discountLabor: ensureRows(d.discountLabor, "hours"),
@@ -440,9 +456,6 @@ function loadSavedJobIntoDraft(job) {
   };
 
   state.jobPricingOverride = {
-    defaultLaborRate: numberOrZero(job.defaultLaborRate),
-    helperLaborRate: numberOrZero(job.helperLaborRate),
-    discountLaborRate: numberOrZero(job.discountLaborRate),
     materialMarkupRate: numberOrZero(job.materialMarkupRate),
     rentalMarkupRate: numberOrZero(job.rentalMarkupRate),
     creditCardFeeRate: numberOrZero(job.creditCardFeeRate)
@@ -548,11 +561,11 @@ function exportCsv() {
 
   const header = [
     "Job ID", "Date", "Client",
-    "Default Labor Hours", "Helper Labor Hours", "Discount Labor Hours",
-    "Default Labor Rate", "Helper Labor Rate", "Discount Labor Rate",
+    "Default Labor Hours", "Helper Labor Hours", "Other Labor Hours",
+    "Default Labor Rate", "Helper Labor Rate", "Other Labor Rate",
     "Base Material Cost", "Base Rental Cost",
     "Material Markup Rate", "Rental Markup Rate", "Credit Card Fee Rate",
-    "Total Default Labor Cost", "Total Helper Labor Cost", "Total Discount Labor Cost",
+    "Total Default Labor Cost", "Total Helper Labor Cost", "Total Other Labor Cost",
     "Total Labor Cost", "Total Material Cost (with markup)", "Total Rental Cost (with markup)",
     "Sub Total", "CC Fee", "Grand Total"
   ];
@@ -602,6 +615,11 @@ function bindInputs() {
   document.getElementById("client-name").addEventListener("input", (e) => {
     state.draft.clientName = e.target.value;
     saveState();
+  });
+  document.getElementById("entry-other-rate").addEventListener("input", (e) => {
+    state.draft.discountLaborRate = numberOrZero(e.target.value);
+    saveState();
+    renderSummary();
   });
 
   document.getElementById("setting-default-rate").addEventListener("input", (e) => {
@@ -666,7 +684,7 @@ function bindInputs() {
     openModal("summary-modal");
 
     // Clear Main for next entry; Edit Job restores this saved record.
-    state.draft = makeDraft();
+    state.draft = makeDraft(state.settings);
     state.jobPricingOverride = null;
     saveState();
     renderHeaderFields();
@@ -692,7 +710,7 @@ function bindInputs() {
   });
 
   document.getElementById("new-job").addEventListener("click", () => {
-    state.draft = makeDraft();
+    state.draft = makeDraft(state.settings);
     state.jobPricingOverride = null;
     saveState();
     renderHeaderFields();
@@ -728,6 +746,9 @@ function bindInputs() {
 
   document.getElementById("export-csv").addEventListener("click", exportCsv);
   document.getElementById("sync-cloud").addEventListener("click", () => {
+    void syncCloud(true);
+  });
+  document.getElementById("settings-sync-now").addEventListener("click", () => {
     void syncCloud(true);
   });
   document.getElementById("clear-saved").addEventListener("click", () => {

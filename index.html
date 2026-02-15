@@ -53,7 +53,10 @@
 
         <div class="labor-type">
           <div class="entry-title-row">
-            <h3>Discount (<span id="main-discount-rate-label"></span>)</h3>
+            <h3>Other</h3>
+            <label class="inline-rate">Rate
+              <input id="entry-other-rate" type="number" step="0.01" min="0">
+            </label>
             <strong id="main-discount-labor"></strong>
           </div>
           <table>
@@ -111,7 +114,7 @@
         <label>With Helper Labor Rate
           <input id="setting-helper-rate" type="number" step="0.01" min="0">
         </label>
-        <label>Discount Labor Rate
+        <label>Other Labor Rate
           <input id="setting-discount-rate" type="number" step="0.01" min="0">
         </label>
         <label>Material Markup Rate
@@ -130,6 +133,9 @@
         <label>Sync Key
           <input id="setting-sync-key" type="text" placeholder="Shared secret key">
         </label>
+        <div class="actions-inline">
+          <button id="settings-sync-now">Sync Now</button>
+        </div>
         <p class="hint">Example: 15% = 0.15, 3% = 0.03</p>
       </div>
     </section>
@@ -150,7 +156,7 @@
         <div class="detail-head"><span>Labor</span><strong id="sum-labor-total"></strong></div>
         <div class="detail-line"><span>Default (<span id="sum-default-rate-label"></span>)</span><strong id="sum-default-labor"></strong></div>
         <div class="detail-line"><span>With Helper (<span id="sum-helper-rate-label"></span>)</span><strong id="sum-helper-labor"></strong></div>
-        <div class="detail-line"><span>Discount (<span id="sum-discount-rate-label"></span>)</span><strong id="sum-discount-labor"></strong></div>
+        <div class="detail-line"><span>Other (<span id="sum-discount-rate-label"></span>)</span><strong id="sum-discount-labor"></strong></div>
       </div>
       <div class="detail-block">
         <div class="detail-head"><span>Materials</span><strong id="sum-material-total"></strong></div>

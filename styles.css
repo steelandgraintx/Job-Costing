@@ -85,6 +85,20 @@ main { padding: 10px; }
 .entry-title-row h3 {
   font-size: 0.98rem;
 }
+.inline-rate {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.inline-rate input {
+  width: 96px;
+  margin-top: 0;
+  padding: 6px 8px;
+  font-size: 0.88rem;
+}
 .inline-subtotal {
   color: var(--muted);
   font-size: 0.88rem;
