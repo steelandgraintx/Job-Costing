@@ -659,20 +659,32 @@ function bindInputs() {
 
   document.getElementById("setting-default-rate").addEventListener("input", (e) => {
     state.settings.defaultLaborRate = numberOrZero(e.target.value);
+    if (!state.isEditingSavedJob) {
+      state.draft.defaultLaborRate = numberOrZero(e.target.value);
+    }
     touchSettingsUpdatedAt();
     saveState();
+    renderHeaderFields();
     renderSummary();
   });
   document.getElementById("setting-helper-rate").addEventListener("input", (e) => {
     state.settings.helperLaborRate = numberOrZero(e.target.value);
+    if (!state.isEditingSavedJob) {
+      state.draft.helperLaborRate = numberOrZero(e.target.value);
+    }
     touchSettingsUpdatedAt();
     saveState();
+    renderHeaderFields();
     renderSummary();
   });
   document.getElementById("setting-discount-rate").addEventListener("input", (e) => {
     state.settings.discountLaborRate = numberOrZero(e.target.value);
+    if (!state.isEditingSavedJob) {
+      state.draft.discountLaborRate = numberOrZero(e.target.value);
+    }
     touchSettingsUpdatedAt();
     saveState();
+    renderHeaderFields();
     renderSummary();
   });
 

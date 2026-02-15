@@ -1,4 +1,4 @@
-const CACHE_NAME = "job-costing-pwa-v20";
+const CACHE_NAME = "job-costing-pwa-v21";
 const URLS = [
   "./",
   "./index.html",
