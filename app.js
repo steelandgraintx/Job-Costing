@@ -64,10 +64,18 @@ function getEffectiveSettings() {
     ...state.settings,
     ...state.jobPricingOverride
   } : state.settings;
+
+  const defaultLaborRate = state.isEditingSavedJob
+    ? numberOrZero(state.draft.defaultLaborRate)
+    : numberOrZero(state.settings.defaultLaborRate);
+  const helperLaborRate = state.isEditingSavedJob
+    ? numberOrZero(state.draft.helperLaborRate)
+    : numberOrZero(state.settings.helperLaborRate);
+
   return {
     ...base,
-    defaultLaborRate: numberOrZero(state.draft.defaultLaborRate),
-    helperLaborRate: numberOrZero(state.draft.helperLaborRate),
+    defaultLaborRate,
+    helperLaborRate,
     discountLaborRate: numberOrZero(state.draft.discountLaborRate)
   };
 }
