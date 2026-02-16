@@ -574,7 +574,13 @@ function renderSavedJobs() {
   const list = document.getElementById("saved-list");
   list.innerHTML = "";
 
-  const jobs = getUserJobs();
+  const jobs = getUserJobs()
+    .slice()
+    .sort((a, b) => {
+      const ta = Date.parse(a.createdDate || a.updatedAt || 0);
+      const tb = Date.parse(b.createdDate || b.updatedAt || 0);
+      return tb - ta;
+    });
   jobs.forEach((job) => {
     const item = document.createElement("button");
     item.className = "list-item";
@@ -842,7 +848,7 @@ function bindInputs() {
     renderSavedJobs();
     state.activeDetailJobId = null;
     closeModal("saved-detail-modal");
-    void syncCloud();
+    void syncCloud(true);
   });
 
   document.getElementById("export-csv").addEventListener("click", exportCsv);
@@ -864,7 +870,7 @@ function bindInputs() {
     renderSavedJobs();
     state.activeDetailJobId = null;
     closeModal("saved-detail-modal");
-    void syncCloud();
+    void syncCloud(true);
   });
 }
 
