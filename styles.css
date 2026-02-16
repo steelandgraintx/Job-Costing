@@ -78,6 +78,12 @@ main { padding: 10px; }
   align-items: baseline;
   gap: 12px;
 }
+.entry-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
 .entry-title-row h2,
 .entry-title-row h3 {
   margin: 0;
@@ -142,22 +148,13 @@ input {
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 th, td {
   text-align: left;
   border-bottom: 1px solid var(--border);
   padding: 6px 4px;
   font-size: 0.9rem;
-}
-th:last-child, td:last-child { width: 44px; text-align: right; }
-
-.row-delete {
-  border: 0;
-  background: transparent;
-  color: var(--danger);
-  font-size: 1rem;
-  cursor: pointer;
 }
 
 button {
@@ -170,6 +167,7 @@ button {
   cursor: pointer;
 }
 button.secondary { background: var(--brand-2); }
+button.compact { padding: 6px 9px; font-size: 0.78rem; }
 button.danger { background: var(--danger); }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 

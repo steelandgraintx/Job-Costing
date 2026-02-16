@@ -38,12 +38,14 @@
             <label id="entry-default-rate-wrap" class="inline-rate is-hidden">Rate
               <input id="entry-default-rate" type="number" step="0.01" min="0">
             </label>
-            <strong id="main-default-labor"></strong>
+            <div class="entry-actions">
+              <strong id="main-default-labor"></strong>
+              <button id="add-default-labor" class="secondary compact">Add Line</button>
+            </div>
           </div>
           <table>
             <tbody id="default-labor-body"></tbody>
           </table>
-          <button id="add-default-labor" class="secondary">Add Line</button>
         </div>
 
         <div class="labor-type">
@@ -52,12 +54,14 @@
             <label id="entry-helper-rate-wrap" class="inline-rate is-hidden">Rate
               <input id="entry-helper-rate" type="number" step="0.01" min="0">
             </label>
-            <strong id="main-helper-labor"></strong>
+            <div class="entry-actions">
+              <strong id="main-helper-labor"></strong>
+              <button id="add-helper-labor" class="secondary compact">Add Line</button>
+            </div>
           </div>
           <table>
             <tbody id="helper-labor-body"></tbody>
           </table>
-          <button id="add-helper-labor" class="secondary">Add Line</button>
         </div>
 
         <div class="labor-type">
@@ -66,19 +70,24 @@
             <label class="inline-rate">Rate
               <input id="entry-other-rate" type="number" step="0.01" min="0">
             </label>
-            <strong id="main-discount-labor"></strong>
+            <div class="entry-actions">
+              <strong id="main-discount-labor"></strong>
+              <button id="add-other-labor" class="secondary compact">Add Line</button>
+            </div>
           </div>
           <table>
             <tbody id="discount-labor-body"></tbody>
           </table>
-          <button id="add-other-labor" class="secondary">Add Line</button>
         </div>
       </div>
 
       <div class="card">
         <div class="entry-title-row">
           <h2>Materials</h2>
-          <span class="inline-subtotal">Subtotal: <span id="main-material-base"></span></span>
+          <div class="entry-actions">
+            <span class="inline-subtotal">Subtotal: <span id="main-material-base"></span></span>
+            <button id="add-material" class="secondary compact">Add Line</button>
+          </div>
         </div>
         <p class="section-subtotal">With Markup: <strong id="main-material-markup"></strong></p>
         <table>
@@ -89,7 +98,10 @@
       <div class="card">
         <div class="entry-title-row">
           <h2>Rentals</h2>
-          <span class="inline-subtotal">Subtotal: <span id="main-rental-base"></span></span>
+          <div class="entry-actions">
+            <span class="inline-subtotal">Subtotal: <span id="main-rental-base"></span></span>
+            <button id="add-rental" class="secondary compact">Add Line</button>
+          </div>
         </div>
         <p class="section-subtotal">With Markup: <strong id="main-rental-markup"></strong></p>
         <table>

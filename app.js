@@ -282,24 +282,7 @@ function renderLaborRows(tbodyId, listKey, fieldKey, autoAdd = true) {
     });
     tdNum.appendChild(numInput);
 
-    const tdDelete = document.createElement("td");
-    const deleteBtn = document.createElement("button");
-    deleteBtn.className = "row-delete";
-    deleteBtn.textContent = "X";
-    deleteBtn.title = "Delete row";
-    deleteBtn.addEventListener("click", () => {
-      state.draft[listKey].splice(idx, 1);
-      if (state.draft[listKey].length === 0) {
-        state.draft[listKey].push(fieldKey === "hours" ? { hours: "" } : { amount: "" });
-      }
-      saveState();
-      renderAllRows();
-      renderSummary();
-    });
-    tdDelete.appendChild(deleteBtn);
-
     tr.appendChild(tdNum);
-    tr.appendChild(tdDelete);
     tbody.appendChild(tr);
   });
 }
@@ -320,16 +303,16 @@ function focusLastNumberInput(tbodyId) {
   if (last) last.focus();
 }
 
-function renderCostRows(tbodyId, listKey) {
-  renderLaborRows(tbodyId, listKey, "amount", true);
+function renderCostRows(tbodyId, listKey, autoAdd = false) {
+  renderLaborRows(tbodyId, listKey, "amount", autoAdd);
 }
 
 function renderAllRows() {
   renderLaborRows("default-labor-body", "defaultLabor", "hours", false);
   renderLaborRows("helper-labor-body", "helperLabor", "hours", false);
   renderLaborRows("discount-labor-body", "discountLabor", "hours", false);
-  renderCostRows("material-body", "materialCosts");
-  renderCostRows("rental-body", "rentalCosts");
+  renderCostRows("material-body", "materialCosts", false);
+  renderCostRows("rental-body", "rentalCosts", false);
 }
 
 function addRow(listKey, fieldKey, tbodyId) {
@@ -679,6 +662,8 @@ function bindInputs() {
   document.getElementById("add-default-labor").addEventListener("click", () => addRow("defaultLabor", "hours", "default-labor-body"));
   document.getElementById("add-helper-labor").addEventListener("click", () => addRow("helperLabor", "hours", "helper-labor-body"));
   document.getElementById("add-other-labor").addEventListener("click", () => addRow("discountLabor", "hours", "discount-labor-body"));
+  document.getElementById("add-material").addEventListener("click", () => addRow("materialCosts", "amount", "material-body"));
+  document.getElementById("add-rental").addEventListener("click", () => addRow("rentalCosts", "amount", "rental-body"));
 
   document.getElementById("setting-default-rate").addEventListener("input", (e) => {
     state.settings.defaultLaborRate = numberOrZero(e.target.value);
