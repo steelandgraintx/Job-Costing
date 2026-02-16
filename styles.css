@@ -78,12 +78,6 @@ main { padding: 10px; }
   align-items: baseline;
   gap: 12px;
 }
-.entry-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: auto;
-}
 .entry-title-row h2,
 .entry-title-row h3 {
   margin: 0;
@@ -150,6 +144,9 @@ table {
   border-collapse: collapse;
   margin-bottom: 4px;
 }
+table input[type="number"] {
+  max-width: 140px;
+}
 th, td {
   text-align: left;
   border-bottom: 1px solid var(--border);
@@ -168,6 +165,19 @@ button {
 }
 button.secondary { background: var(--brand-2); }
 button.compact { padding: 6px 9px; font-size: 0.78rem; }
+.entry-lines {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.entry-lines table {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.add-inline {
+  margin-top: 6px;
+  white-space: nowrap;
+}
 button.danger { background: var(--danger); }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 
