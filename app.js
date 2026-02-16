@@ -246,7 +246,7 @@ function formatDateOnly(value) {
   return new Date(value).toLocaleDateString();
 }
 
-function renderLaborRows(tbodyId, listKey, fieldKey) {
+function renderLaborRows(tbodyId, listKey, fieldKey, autoAdd = true) {
   const tbody = document.getElementById(tbodyId);
   const rows = state.draft[listKey];
   tbody.innerHTML = "";
@@ -270,6 +270,7 @@ function renderLaborRows(tbodyId, listKey, fieldKey) {
       renderSummary();
     });
     numInput.addEventListener("change", () => {
+      if (!autoAdd) return;
       const raw = state.draft[listKey][idx][fieldKey];
       if (raw !== "" && idx === state.draft[listKey].length - 1) {
         state.draft[listKey].push(fieldKey === "hours" ? { hours: "" } : { amount: "" });
@@ -312,13 +313,13 @@ function focusNextNumberInput(tbodyId, currentIndex) {
 }
 
 function renderCostRows(tbodyId, listKey) {
-  renderLaborRows(tbodyId, listKey, "amount");
+  renderLaborRows(tbodyId, listKey, "amount", true);
 }
 
 function renderAllRows() {
-  renderLaborRows("default-labor-body", "defaultLabor", "hours");
-  renderLaborRows("helper-labor-body", "helperLabor", "hours");
-  renderLaborRows("discount-labor-body", "discountLabor", "hours");
+  renderLaborRows("default-labor-body", "defaultLabor", "hours", false);
+  renderLaborRows("helper-labor-body", "helperLabor", "hours", false);
+  renderLaborRows("discount-labor-body", "discountLabor", "hours", false);
   renderCostRows("material-body", "materialCosts");
   renderCostRows("rental-body", "rentalCosts");
 }
@@ -664,6 +665,9 @@ function bindInputs() {
     saveState();
     renderSummary();
   });
+  document.getElementById("add-default-labor").addEventListener("click", () => addRow("defaultLabor", "hours"));
+  document.getElementById("add-helper-labor").addEventListener("click", () => addRow("helperLabor", "hours"));
+  document.getElementById("add-other-labor").addEventListener("click", () => addRow("discountLabor", "hours"));
 
   document.getElementById("setting-default-rate").addEventListener("input", (e) => {
     state.settings.defaultLaborRate = numberOrZero(e.target.value);
