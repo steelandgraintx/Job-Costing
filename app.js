@@ -312,6 +312,14 @@ function focusNextNumberInput(tbodyId, currentIndex) {
   if (next) next.focus();
 }
 
+function focusLastNumberInput(tbodyId) {
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  const inputs = tbody.querySelectorAll('input[type="number"]');
+  const last = inputs[inputs.length - 1];
+  if (last) last.focus();
+}
+
 function renderCostRows(tbodyId, listKey) {
   renderLaborRows(tbodyId, listKey, "amount", true);
 }
@@ -324,10 +332,13 @@ function renderAllRows() {
   renderCostRows("rental-body", "rentalCosts");
 }
 
-function addRow(listKey, fieldKey) {
+function addRow(listKey, fieldKey, tbodyId) {
   state.draft[listKey].push(fieldKey === "hours" ? { hours: "" } : { amount: "" });
   saveState();
   renderAllRows();
+  if (tbodyId) {
+    requestAnimationFrame(() => focusLastNumberInput(tbodyId));
+  }
 }
 
 function renderHeaderFields() {
@@ -665,9 +676,9 @@ function bindInputs() {
     saveState();
     renderSummary();
   });
-  document.getElementById("add-default-labor").addEventListener("click", () => addRow("defaultLabor", "hours"));
-  document.getElementById("add-helper-labor").addEventListener("click", () => addRow("helperLabor", "hours"));
-  document.getElementById("add-other-labor").addEventListener("click", () => addRow("discountLabor", "hours"));
+  document.getElementById("add-default-labor").addEventListener("click", () => addRow("defaultLabor", "hours", "default-labor-body"));
+  document.getElementById("add-helper-labor").addEventListener("click", () => addRow("helperLabor", "hours", "helper-labor-body"));
+  document.getElementById("add-other-labor").addEventListener("click", () => addRow("discountLabor", "hours", "discount-labor-body"));
 
   document.getElementById("setting-default-rate").addEventListener("input", (e) => {
     state.settings.defaultLaborRate = numberOrZero(e.target.value);
