@@ -1,9 +1,4 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" rx="96" fill="#0d0d0d"/>
-  <g fill="none" stroke="#f4c20d" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M120 118 L250 72 L250 392 L120 440 Z"/>
-    <path d="M164 170 L164 354 L206 338 L206 152 Z"/>
-    <path d="M392 118 L262 72 L262 392 L392 440 Z"/>
-    <path d="M348 170 L348 354 L306 338 L306 152 Z"/>
-  </g>
+  <text x="256" y="320" text-anchor="middle" fill="#f4c20d" font-size="220" font-family="Arial, Helvetica, sans-serif" font-weight="800">JC</text>
 </svg>
