@@ -1,13 +1,26 @@
 const STORAGE_KEYS = {
   draft: "job_costing_pwa_draft",
   settings: "job_costing_pwa_settings",
-  savedJobs: "job_costing_pwa_saved_jobs"
+  savedJobs: "job_costing_pwa_saved_jobs",
+  jobCounter: "job_costing_pwa_job_counter"
 };
 const SETTINGS_RECORD_ID = "__APP_SETTINGS__";
 
-function makeJobId(date) {
-  const pad = (n) => String(n).padStart(2, "0");
-  return `JOB-${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
+function getNextJobNumber() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.jobCounter);
+    const current = Number.parseInt(raw || "0", 10);
+    const safeCurrent = Number.isFinite(current) ? current : 0;
+    const next = safeCurrent >= 9999 ? 1 : safeCurrent + 1;
+    localStorage.setItem(STORAGE_KEYS.jobCounter, String(next));
+    return next;
+  } catch (_) {
+    return Math.floor(Math.random() * 9999) + 1;
+  }
+}
+
+function makeJobId() {
+  return `JC-${String(getNextJobNumber()).padStart(4, "0")}`;
 }
 
 function makeDraft(settings = {}) {
@@ -176,8 +189,35 @@ function isSettingsRecord(job) {
   return job && job.jobId === SETTINGS_RECORD_ID;
 }
 
+function isDeletedRecord(job) {
+  return Boolean(job && job.deletedAt);
+}
+
 function getUserJobs() {
-  return state.savedJobs.filter((job) => !isSettingsRecord(job));
+  return state.savedJobs.filter((job) => !isSettingsRecord(job) && !isDeletedRecord(job));
+}
+
+function markJobDeleted(jobId) {
+  const idx = state.savedJobs.findIndex((job) => job && job.jobId === jobId && !isSettingsRecord(job));
+  if (idx < 0) return false;
+  const existing = state.savedJobs[idx];
+  const now = new Date().toISOString();
+  state.savedJobs[idx] = {
+    ...existing,
+    updatedAt: now,
+    deletedAt: now
+  };
+  return true;
+}
+
+function ensureUniqueDraftJobId() {
+  if (state.isEditingSavedJob) return;
+  const ids = new Set(getUserJobs().map((job) => job.jobId));
+  let attempts = 0;
+  while (ids.has(state.draft.jobId) && attempts < 10020) {
+    state.draft.jobId = makeJobId();
+    attempts += 1;
+  }
 }
 
 function touchSettingsUpdatedAt() {
@@ -724,6 +764,7 @@ function bindInputs() {
   });
 
   document.getElementById("calculate-job").addEventListener("click", () => {
+    ensureUniqueDraftJobId();
     const snapshot = snapshotCurrentJob();
     const existingIdx = state.savedJobs.findIndex((j) => j.jobId === snapshot.jobId);
     if (existingIdx >= 0) {
@@ -795,13 +836,13 @@ function bindInputs() {
   });
   document.getElementById("saved-detail-delete").addEventListener("click", () => {
     if (!state.activeDetailJobId) return;
-    const idx = state.savedJobs.findIndex((j) => j.jobId === state.activeDetailJobId);
-    if (idx < 0) return;
-    state.savedJobs.splice(idx, 1);
+    const deleted = markJobDeleted(state.activeDetailJobId);
+    if (!deleted) return;
     saveState();
     renderSavedJobs();
     state.activeDetailJobId = null;
     closeModal("saved-detail-modal");
+    void syncCloud();
   });
 
   document.getElementById("export-csv").addEventListener("click", exportCsv);
@@ -816,11 +857,14 @@ function bindInputs() {
     if (!jobs.length) return;
     const ok = confirm("Clear all saved jobs?");
     if (!ok) return;
-    state.savedJobs = state.savedJobs.filter((job) => isSettingsRecord(job));
+    jobs.forEach((job) => {
+      markJobDeleted(job.jobId);
+    });
     saveState();
     renderSavedJobs();
     state.activeDetailJobId = null;
     closeModal("saved-detail-modal");
+    void syncCloud();
   });
 }
 
