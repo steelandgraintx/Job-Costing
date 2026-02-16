@@ -1,4 +1,4 @@
-const CACHE_NAME = "job-costing-pwa-v25";
+const CACHE_NAME = "job-costing-pwa-v26";
 const URLS = [
   "./",
   "./index.html",
@@ -6,6 +6,7 @@ const URLS = [
   "./app.js",
   "./manifest.webmanifest",
   "./icon.svg",
+  "./apple-touch-icon.svg",
   "./CLOUD_SYNC.md"
 ];
 

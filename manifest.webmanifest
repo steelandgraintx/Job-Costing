@@ -3,8 +3,8 @@
   "short_name": "JobCost",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#f4f7f4",
-  "theme_color": "#0b3d2e",
+  "background_color": "#f57c00",
+  "theme_color": "#f57c00",
   "icons": [
     {
       "src": "icon.svg",
