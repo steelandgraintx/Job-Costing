@@ -25,9 +25,12 @@
       <div class="card">
         <h2>Job Info</h2>
         <label>Client Name
-          <input id="client-name" type="text" placeholder="Client name" list="client-name-options" autocomplete="off">
+          <div class="combo-wrap">
+            <input id="client-name" type="text" placeholder="Client name" autocomplete="off">
+            <button id="client-name-pick" type="button" class="secondary compact" aria-label="Show saved customers">Select</button>
+          </div>
         </label>
-        <datalist id="client-name-options"></datalist>
+        <div id="client-name-options" class="combo-list hidden"></div>
       </div>
 
       <div class="card labor-group">
@@ -118,12 +121,38 @@
     <section id="tab-saved" class="panel">
       <div class="card">
         <h2>Job List</h2>
-        <div class="list-filters">
-          <label>Customer
-            <select id="saved-client-filter">
-              <option value="">All Customers</option>
+        <div class="list-toolbar">
+          <button id="toggle-list-filters" type="button" class="link-button">Filter / Sort</button>
+        </div>
+        <div id="list-filters-panel" class="list-filters hidden">
+          <label>Filter Field
+            <select id="saved-filter-field">
+              <option value="clientName">Client Name</option>
+              <option value="jobId">Job ID</option>
+              <option value="createdDate">Date</option>
+              <option value="grandTotal">Grand Total</option>
             </select>
           </label>
+          <label>Filter Text
+            <input id="saved-filter-query" type="text" placeholder="Type to filter">
+          </label>
+          <label>Sort By
+            <select id="saved-sort-field">
+              <option value="createdDate">Date</option>
+              <option value="clientName">Client Name</option>
+              <option value="jobId">Job ID</option>
+              <option value="grandTotal">Grand Total</option>
+            </select>
+          </label>
+          <label>Sort Order
+            <select id="saved-sort-dir">
+              <option value="desc">Descending</option>
+              <option value="asc">Ascending</option>
+            </select>
+          </label>
+          <div class="actions-inline">
+            <button id="clear-list-filters" type="button" class="secondary compact">Clear</button>
+          </div>
         </div>
         <p id="saved-count"></p>
         <div id="saved-list" class="saved-list"></div>

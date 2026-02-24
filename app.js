@@ -54,7 +54,10 @@ const state = {
   },
   draft: makeDraft(),
   savedJobs: [],
-  savedClientFilter: "",
+  savedFilterField: "clientName",
+  savedFilterQuery: "",
+  savedSortField: "createdDate",
+  savedSortDir: "desc",
   lastCalculatedJobId: null,
   activeDetailJobId: null,
   jobPricingOverride: null,
@@ -207,42 +210,58 @@ function getClientNames(jobs = getUserJobs()) {
   return [...names].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
 }
 
-function renderClientNameSuggestions(clientNames) {
-  const datalist = document.getElementById("client-name-options");
-  if (!datalist) return;
-  datalist.innerHTML = "";
-  clientNames.forEach((name) => {
-    const option = document.createElement("option");
-    option.value = name;
-    datalist.appendChild(option);
+function renderClientNameSuggestions(clientNames, query = "", forceShow = false) {
+  const list = document.getElementById("client-name-options");
+  if (!list) return;
+  const q = String(query || "").trim().toLowerCase();
+  if (!forceShow && !q) {
+    list.innerHTML = "";
+    list.classList.add("hidden");
+    return;
+  }
+  const filtered = (q ? clientNames.filter((name) => name.toLowerCase().includes(q)) : clientNames).slice(0, 8);
+  list.innerHTML = "";
+  if (!filtered.length) {
+    list.classList.add("hidden");
+    return;
+  }
+  filtered.forEach((name) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "combo-option";
+    btn.textContent = name;
+    btn.addEventListener("click", () => {
+      state.draft.clientName = name;
+      document.getElementById("client-name").value = name;
+      list.classList.add("hidden");
+      saveState();
+    });
+    list.appendChild(btn);
   });
+  list.classList.remove("hidden");
 }
 
-function renderSavedClientFilter(clientNames) {
-  const select = document.getElementById("saved-client-filter");
-  if (!select) return;
+function getFilterValue(job, field) {
+  if (field === "grandTotal") return numberOrZero(job.grandTotal);
+  if (field === "createdDate") return Date.parse(job.createdDate || job.updatedAt || 0) || 0;
+  return String(job[field] || "");
+}
 
-  const current = state.savedClientFilter || "";
-  select.innerHTML = "";
-
-  const allOption = document.createElement("option");
-  allOption.value = "";
-  allOption.textContent = "All Customers";
-  select.appendChild(allOption);
-
-  clientNames.forEach((name) => {
-    const option = document.createElement("option");
-    option.value = name;
-    option.textContent = name;
-    select.appendChild(option);
-  });
-
-  if (current && clientNames.includes(current)) {
-    select.value = current;
-  } else {
-    state.savedClientFilter = "";
-    select.value = "";
+function applyListFilterAndSort(jobs) {
+  const q = String(state.savedFilterQuery || "").trim().toLowerCase();
+  let filtered = jobs;
+  if (q) {
+    filtered = jobs.filter((job) => String(getFilterValue(job, state.savedFilterField)).toLowerCase().includes(q));
   }
+
+  const dir = state.savedSortDir === "asc" ? 1 : -1;
+  filtered.sort((a, b) => {
+    const av = getFilterValue(a, state.savedSortField);
+    const bv = getFilterValue(b, state.savedSortField);
+    if (typeof av === "number" && typeof bv === "number") return (av - bv) * dir;
+    return String(av).localeCompare(String(bv), undefined, { sensitivity: "base" }) * dir;
+  });
+  return filtered;
 }
 
 function markJobDeleted(jobId) {
@@ -622,20 +641,12 @@ function renderSavedJobs() {
   const list = document.getElementById("saved-list");
   list.innerHTML = "";
 
-  const allJobs = getUserJobs()
-    .slice()
-    .sort((a, b) => {
-      const ta = Date.parse(a.createdDate || a.updatedAt || 0);
-      const tb = Date.parse(b.createdDate || b.updatedAt || 0);
-      return tb - ta;
-    });
+  const allJobs = getUserJobs().slice();
   const clientNames = getClientNames(allJobs);
-  renderClientNameSuggestions(clientNames);
-  renderSavedClientFilter(clientNames);
+  const clientInput = document.getElementById("client-name");
+  renderClientNameSuggestions(clientNames, clientInput ? clientInput.value : "", false);
 
-  const jobs = state.savedClientFilter
-    ? allJobs.filter((job) => String(job.clientName || "").trim() === state.savedClientFilter)
-    : allJobs;
+  const jobs = applyListFilterAndSort(allJobs);
 
   jobs.forEach((job) => {
     const item = document.createElement("button");
@@ -649,9 +660,7 @@ function renderSavedJobs() {
     list.appendChild(item);
   });
 
-  document.getElementById("saved-count").textContent = state.savedClientFilter
-    ? `${jobs.length} saved job record(s) for ${state.savedClientFilter}`
-    : `${jobs.length} saved job record(s)`;
+  document.getElementById("saved-count").textContent = `${jobs.length} saved job record(s)`;
 }
 
 function openSavedDetail(jobId) {
@@ -746,7 +755,23 @@ function exportCsv() {
 function bindInputs() {
   document.getElementById("client-name").addEventListener("input", (e) => {
     state.draft.clientName = e.target.value;
+    renderClientNameSuggestions(getClientNames(), e.target.value, false);
     saveState();
+  });
+  document.getElementById("client-name").addEventListener("focus", (e) => {
+    renderClientNameSuggestions(getClientNames(), e.target.value, false);
+  });
+  document.getElementById("client-name-pick").addEventListener("click", () => {
+    const input = document.getElementById("client-name");
+    renderClientNameSuggestions(getClientNames(), input.value, true);
+  });
+  document.addEventListener("click", (e) => {
+    const box = document.getElementById("client-name-options");
+    const input = document.getElementById("client-name");
+    const button = document.getElementById("client-name-pick");
+    if (!box || !input || !button) return;
+    if (e.target === input || e.target === button || box.contains(e.target)) return;
+    box.classList.add("hidden");
   });
   document.getElementById("entry-default-rate").addEventListener("input", (e) => {
     state.draft.defaultLaborRate = numberOrZero(e.target.value);
@@ -826,8 +851,35 @@ function bindInputs() {
     state.settings.syncKey = (e.target.value || "").trim();
     saveState();
   });
-  document.getElementById("saved-client-filter").addEventListener("change", (e) => {
-    state.savedClientFilter = e.target.value || "";
+  document.getElementById("saved-filter-field").addEventListener("change", (e) => {
+    state.savedFilterField = e.target.value || "clientName";
+    renderSavedJobs();
+  });
+  document.getElementById("saved-filter-query").addEventListener("input", (e) => {
+    state.savedFilterQuery = e.target.value || "";
+    renderSavedJobs();
+  });
+  document.getElementById("saved-sort-field").addEventListener("change", (e) => {
+    state.savedSortField = e.target.value || "createdDate";
+    renderSavedJobs();
+  });
+  document.getElementById("saved-sort-dir").addEventListener("change", (e) => {
+    state.savedSortDir = e.target.value || "desc";
+    renderSavedJobs();
+  });
+  document.getElementById("toggle-list-filters").addEventListener("click", () => {
+    const panel = document.getElementById("list-filters-panel");
+    panel.classList.toggle("hidden");
+  });
+  document.getElementById("clear-list-filters").addEventListener("click", () => {
+    state.savedFilterField = "clientName";
+    state.savedFilterQuery = "";
+    state.savedSortField = "createdDate";
+    state.savedSortDir = "desc";
+    document.getElementById("saved-filter-field").value = state.savedFilterField;
+    document.getElementById("saved-filter-query").value = state.savedFilterQuery;
+    document.getElementById("saved-sort-field").value = state.savedSortField;
+    document.getElementById("saved-sort-dir").value = state.savedSortDir;
     renderSavedJobs();
   });
 
