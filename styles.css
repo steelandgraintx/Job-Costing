@@ -118,7 +118,8 @@ main { padding: 10px; }
 }
 
 label { display: block; margin-bottom: 10px; font-size: 0.92rem; }
-input {
+input,
+select {
   width: 100%;
   margin-top: 5px;
   border: 1px solid var(--border);
@@ -241,6 +242,9 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+.list-filters {
+  margin-bottom: 8px;
 }
 .list-item {
   border: 1px solid var(--border);

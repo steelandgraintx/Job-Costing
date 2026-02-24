@@ -25,8 +25,9 @@
       <div class="card">
         <h2>Job Info</h2>
         <label>Client Name
-          <input id="client-name" type="text" placeholder="Client name">
+          <input id="client-name" type="text" placeholder="Client name" list="client-name-options" autocomplete="off">
         </label>
+        <datalist id="client-name-options"></datalist>
       </div>
 
       <div class="card labor-group">
@@ -117,6 +118,13 @@
     <section id="tab-saved" class="panel">
       <div class="card">
         <h2>Job List</h2>
+        <div class="list-filters">
+          <label>Customer
+            <select id="saved-client-filter">
+              <option value="">All Customers</option>
+            </select>
+          </label>
+        </div>
         <p id="saved-count"></p>
         <div id="saved-list" class="saved-list"></div>
         <div class="actions-inline">

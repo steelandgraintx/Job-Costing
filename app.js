@@ -54,6 +54,7 @@ const state = {
   },
   draft: makeDraft(),
   savedJobs: [],
+  savedClientFilter: "",
   lastCalculatedJobId: null,
   activeDetailJobId: null,
   jobPricingOverride: null,
@@ -195,6 +196,53 @@ function isDeletedRecord(job) {
 
 function getUserJobs() {
   return state.savedJobs.filter((job) => !isSettingsRecord(job) && !isDeletedRecord(job));
+}
+
+function getClientNames(jobs = getUserJobs()) {
+  const names = new Set();
+  jobs.forEach((job) => {
+    const name = String(job.clientName || "").trim();
+    if (name) names.add(name);
+  });
+  return [...names].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+}
+
+function renderClientNameSuggestions(clientNames) {
+  const datalist = document.getElementById("client-name-options");
+  if (!datalist) return;
+  datalist.innerHTML = "";
+  clientNames.forEach((name) => {
+    const option = document.createElement("option");
+    option.value = name;
+    datalist.appendChild(option);
+  });
+}
+
+function renderSavedClientFilter(clientNames) {
+  const select = document.getElementById("saved-client-filter");
+  if (!select) return;
+
+  const current = state.savedClientFilter || "";
+  select.innerHTML = "";
+
+  const allOption = document.createElement("option");
+  allOption.value = "";
+  allOption.textContent = "All Customers";
+  select.appendChild(allOption);
+
+  clientNames.forEach((name) => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    select.appendChild(option);
+  });
+
+  if (current && clientNames.includes(current)) {
+    select.value = current;
+  } else {
+    state.savedClientFilter = "";
+    select.value = "";
+  }
 }
 
 function markJobDeleted(jobId) {
@@ -574,13 +622,21 @@ function renderSavedJobs() {
   const list = document.getElementById("saved-list");
   list.innerHTML = "";
 
-  const jobs = getUserJobs()
+  const allJobs = getUserJobs()
     .slice()
     .sort((a, b) => {
       const ta = Date.parse(a.createdDate || a.updatedAt || 0);
       const tb = Date.parse(b.createdDate || b.updatedAt || 0);
       return tb - ta;
     });
+  const clientNames = getClientNames(allJobs);
+  renderClientNameSuggestions(clientNames);
+  renderSavedClientFilter(clientNames);
+
+  const jobs = state.savedClientFilter
+    ? allJobs.filter((job) => String(job.clientName || "").trim() === state.savedClientFilter)
+    : allJobs;
+
   jobs.forEach((job) => {
     const item = document.createElement("button");
     item.className = "list-item";
@@ -593,7 +649,9 @@ function renderSavedJobs() {
     list.appendChild(item);
   });
 
-  document.getElementById("saved-count").textContent = `${jobs.length} saved job record(s)`;
+  document.getElementById("saved-count").textContent = state.savedClientFilter
+    ? `${jobs.length} saved job record(s) for ${state.savedClientFilter}`
+    : `${jobs.length} saved job record(s)`;
 }
 
 function openSavedDetail(jobId) {
@@ -767,6 +825,10 @@ function bindInputs() {
   document.getElementById("setting-sync-key").addEventListener("input", (e) => {
     state.settings.syncKey = (e.target.value || "").trim();
     saveState();
+  });
+  document.getElementById("saved-client-filter").addEventListener("change", (e) => {
+    state.savedClientFilter = e.target.value || "";
+    renderSavedJobs();
   });
 
   document.getElementById("calculate-job").addEventListener("click", () => {
