@@ -761,16 +761,11 @@ function bindInputs() {
   document.getElementById("client-name").addEventListener("focus", (e) => {
     renderClientNameSuggestions(getClientNames(), e.target.value, false);
   });
-  document.getElementById("client-name-pick").addEventListener("click", () => {
-    const input = document.getElementById("client-name");
-    renderClientNameSuggestions(getClientNames(), input.value, true);
-  });
   document.addEventListener("click", (e) => {
     const box = document.getElementById("client-name-options");
     const input = document.getElementById("client-name");
-    const button = document.getElementById("client-name-pick");
-    if (!box || !input || !button) return;
-    if (e.target === input || e.target === button || box.contains(e.target)) return;
+    if (!box || !input) return;
+    if (e.target === input || box.contains(e.target)) return;
     box.classList.add("hidden");
   });
   document.getElementById("entry-default-rate").addEventListener("input", (e) => {
