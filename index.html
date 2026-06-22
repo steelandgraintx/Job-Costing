@@ -16,7 +16,8 @@
 
   <nav class="tabs" aria-label="Main navigation">
     <button class="tab active" data-tab="main">Entry</button>
-    <button class="tab" data-tab="saved">List</button>
+    <button class="tab" data-tab="ongoing">Ongoing</button>
+    <button class="tab" data-tab="saved">Completed</button>
     <button class="tab" data-tab="settings">Settings</button>
   </nav>
 
@@ -87,7 +88,6 @@
           <h2>Materials</h2>
           <span class="inline-subtotal">Subtotal: <span id="main-material-base"></span></span>
         </div>
-        <p class="section-subtotal">With Markup: <strong id="main-material-markup"></strong></p>
         <div class="entry-lines">
           <table>
             <tbody id="material-body"></tbody>
@@ -101,7 +101,6 @@
           <h2>Rentals</h2>
           <span class="inline-subtotal">Subtotal: <span id="main-rental-base"></span></span>
         </div>
-        <p class="section-subtotal">With Markup: <strong id="main-rental-markup"></strong></p>
         <div class="entry-lines">
           <table>
             <tbody id="rental-body"></tbody>
@@ -110,14 +109,44 @@
         </div>
       </div>
 
-      <div class="card actions">
-        <button id="calculate-job">Calculate</button>
+      <div class="card live-job-total">
+        <h2>Live Job Total</h2>
+        <div class="summary-row"><span>Total Labor</span><strong id="live-labor-total"></strong></div>
+        <div class="detail-block">
+          <div class="detail-head"><span>Materials</span><strong id="live-material-total"></strong></div>
+          <div class="detail-line"><span>Subtotal Materials</span><span id="live-material-base"></span></div>
+          <div class="detail-line"><span>Markup (<span id="live-material-rate-label"></span>)</span><span id="live-material-markup"></span></div>
+        </div>
+        <div class="detail-block">
+          <div class="detail-head"><span>Rentals</span><strong id="live-rental-total"></strong></div>
+          <div class="detail-line"><span>Subtotal Rentals</span><span id="live-rental-base"></span></div>
+          <div class="detail-line"><span>Markup (<span id="live-rental-rate-label"></span>)</span><span id="live-rental-markup"></span></div>
+        </div>
+        <div class="summary-row"><span>Subtotal</span><strong id="live-subtotal"></strong></div>
+        <div class="summary-row"><span>CC Fee</span><strong id="live-cc-fee"></strong></div>
+        <div class="summary-row total"><span>Grand Total</span><strong id="live-grand-total"></strong></div>
+      </div>
+
+      <div class="card">
+        <div class="actions">
+          <button id="save-job" class="secondary">Ongoing</button>
+          <button id="finish-job">Complete</button>
+        </div>
+        <p id="entry-save-status" class="hint"></p>
+      </div>
+    </section>
+
+    <section id="tab-ongoing" class="panel">
+      <div class="card">
+        <h2>Ongoing Jobs</h2>
+        <p id="ongoing-count"></p>
+        <div id="ongoing-list" class="saved-list"></div>
       </div>
     </section>
 
     <section id="tab-saved" class="panel">
       <div class="card">
-        <h2>Job List</h2>
+        <h2>Completed Jobs</h2>
         <div class="list-toolbar">
           <button id="toggle-list-filters" type="button" class="link-button">Filter / Sort</button>
         </div>

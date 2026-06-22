@@ -2,9 +2,11 @@ const STORAGE_KEYS = {
   draft: "job_costing_pwa_draft",
   settings: "job_costing_pwa_settings",
   savedJobs: "job_costing_pwa_saved_jobs",
-  jobCounter: "job_costing_pwa_job_counter"
+  jobCounter: "job_costing_pwa_job_counter",
+  rateDefaultsVersion: "job_costing_pwa_rate_defaults_version"
 };
 const SETTINGS_RECORD_ID = "__APP_SETTINGS__";
+const RATE_DEFAULTS_VERSION = 2;
 
 function getNextJobNumber() {
   try {
@@ -29,8 +31,8 @@ function makeDraft(settings = {}) {
     clientName: "",
     createdDate: now.toISOString(),
     jobId: makeJobId(now),
-    defaultLaborRate: numberOrZero(settings.defaultLaborRate || 110),
-    helperLaborRate: numberOrZero(settings.helperLaborRate || 130),
+    defaultLaborRate: numberOrZero(settings.defaultLaborRate || 120),
+    helperLaborRate: numberOrZero(settings.helperLaborRate || 140),
     discountLaborRate: numberOrZero(settings.discountLaborRate || 75),
     defaultLabor: [{ hours: "" }],
     helperLabor: [{ hours: "" }],
@@ -42,8 +44,8 @@ function makeDraft(settings = {}) {
 
 const state = {
   settings: {
-    defaultLaborRate: 110,
-    helperLaborRate: 130,
+    defaultLaborRate: 120,
+    helperLaborRate: 140,
     discountLaborRate: 75,
     materialMarkupRate: 0.25,
     rentalMarkupRate: 0.25,
@@ -149,6 +151,7 @@ function saveState() {
 }
 
 function loadState() {
+  let migratedRateDefaults = false;
   try {
     const draft = JSON.parse(localStorage.getItem(STORAGE_KEYS.draft));
     const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.settings));
@@ -166,11 +169,20 @@ function loadState() {
   if (!state.settings.settingsUpdatedAt) {
     touchSettingsUpdatedAt();
   }
+  const storedRateVersion = Number.parseInt(localStorage.getItem(STORAGE_KEYS.rateDefaultsVersion) || "0", 10);
+  if (storedRateVersion < RATE_DEFAULTS_VERSION) {
+    state.settings.defaultLaborRate = 120;
+    state.settings.helperLaborRate = 140;
+    touchSettingsUpdatedAt();
+    localStorage.setItem(STORAGE_KEYS.rateDefaultsVersion, String(RATE_DEFAULTS_VERSION));
+    migratedRateDefaults = true;
+  }
   if (state.draft.defaultLaborRate === undefined) state.draft.defaultLaborRate = numberOrZero(state.settings.defaultLaborRate);
   if (state.draft.helperLaborRate === undefined) state.draft.helperLaborRate = numberOrZero(state.settings.helperLaborRate);
   if (state.draft.discountLaborRate === undefined) state.draft.discountLaborRate = numberOrZero(state.settings.discountLaborRate);
   upsertSettingsRecord();
   applySettingsFromSyncedRecord();
+  if (migratedRateDefaults) saveState();
 }
 
 function bindTabs() {
@@ -199,6 +211,18 @@ function isDeletedRecord(job) {
 
 function getUserJobs() {
   return state.savedJobs.filter((job) => !isSettingsRecord(job) && !isDeletedRecord(job));
+}
+
+function getJobStatus(job) {
+  return job && job.status === "ongoing" ? "ongoing" : "completed";
+}
+
+function getOngoingJobs() {
+  return getUserJobs().filter((job) => getJobStatus(job) === "ongoing");
+}
+
+function getCompletedJobs() {
+  return getUserJobs().filter((job) => getJobStatus(job) === "completed");
 }
 
 function getClientNames(jobs = getUserJobs()) {
@@ -465,15 +489,26 @@ function updateEntryRateEditability() {
 
 function renderMainTotals(sum, settings) {
   const rateToLabel = (rate) => `${money.format(numberOrZero(rate))}`;
+  const percentLabel = (rate) => `${(numberOrZero(rate) * 100).toFixed(2)}%`;
   document.getElementById("main-default-rate-label").textContent = rateToLabel(settings.defaultLaborRate);
   document.getElementById("main-helper-rate-label").textContent = rateToLabel(settings.helperLaborRate);
   document.getElementById("main-default-labor").textContent = money.format(sum.totalDefaultLaborCost);
   document.getElementById("main-helper-labor").textContent = money.format(sum.totalHelperLaborCost);
   document.getElementById("main-discount-labor").textContent = money.format(sum.totalDiscountLaborCost);
   document.getElementById("main-material-base").textContent = money.format(sum.baseMaterialCost);
-  document.getElementById("main-material-markup").textContent = money.format(sum.totalMaterialCostWithMarkup);
   document.getElementById("main-rental-base").textContent = money.format(sum.baseRentalCost);
-  document.getElementById("main-rental-markup").textContent = money.format(sum.totalRentalCostWithMarkup);
+  document.getElementById("live-labor-total").textContent = money.format(sum.totalLaborCost);
+  document.getElementById("live-material-total").textContent = money.format(sum.totalMaterialCostWithMarkup);
+  document.getElementById("live-material-base").textContent = money.format(sum.baseMaterialCost);
+  document.getElementById("live-material-rate-label").textContent = percentLabel(settings.materialMarkupRate);
+  document.getElementById("live-material-markup").textContent = money.format(sum.materialMarkupAmount);
+  document.getElementById("live-rental-total").textContent = money.format(sum.totalRentalCostWithMarkup);
+  document.getElementById("live-rental-base").textContent = money.format(sum.baseRentalCost);
+  document.getElementById("live-rental-rate-label").textContent = percentLabel(settings.rentalMarkupRate);
+  document.getElementById("live-rental-markup").textContent = money.format(sum.rentalMarkupAmount);
+  document.getElementById("live-subtotal").textContent = money.format(sum.subTotal);
+  document.getElementById("live-cc-fee").textContent = money.format(sum.ccFee);
+  document.getElementById("live-grand-total").textContent = money.format(sum.grandTotal);
 }
 
 function renderSummaryDetails(sum, settings) {
@@ -600,16 +635,20 @@ function loadSavedJobIntoDraft(job) {
   renderAllRows();
   renderSummary();
   setActiveTab("main");
+  document.getElementById("entry-save-status").textContent = getJobStatus(job) === "ongoing"
+    ? "Continuing ongoing job."
+    : "Editing completed job.";
   state.activeSummaryView = null;
   closeModal("saved-detail-modal");
   closeModal("summary-modal");
 }
 
-function snapshotCurrentJob() {
+function snapshotCurrentJob(status = "completed") {
   const sum = calcSummary();
   const effective = getEffectiveSettings();
   return {
     jobId: state.draft.jobId,
+    status,
     updatedAt: new Date().toISOString(),
     createdDate: state.draft.createdDate,
     clientName: state.draft.clientName,
@@ -637,15 +676,37 @@ function snapshotCurrentJob() {
   };
 }
 
+function renderOngoingJobs() {
+  const list = document.getElementById("ongoing-list");
+  if (!list) return;
+  list.innerHTML = "";
+
+  const jobs = getOngoingJobs().slice().sort((a, b) => {
+    const ta = Date.parse(a.updatedAt || a.createdDate || 0);
+    const tb = Date.parse(b.updatedAt || b.createdDate || 0);
+    return tb - ta;
+  });
+
+  jobs.forEach((job) => {
+    const item = document.createElement("button");
+    item.className = "list-item";
+    item.innerHTML = `
+      <span>${escapeHtml(formatDateOnly(job.createdDate))}</span>
+      <span>${escapeHtml(job.clientName || "Unassigned")}</span>
+      <strong>${money.format(numberOrZero(job.grandTotal))}</strong>
+    `;
+    item.addEventListener("click", () => loadSavedJobIntoDraft(job));
+    list.appendChild(item);
+  });
+
+  document.getElementById("ongoing-count").textContent = `${jobs.length} ongoing job record(s)`;
+}
+
 function renderSavedJobs() {
   const list = document.getElementById("saved-list");
   list.innerHTML = "";
 
-  const allJobs = getUserJobs().slice();
-  const clientNames = getClientNames(allJobs);
-  const clientInput = document.getElementById("client-name");
-  renderClientNameSuggestions(clientNames, clientInput ? clientInput.value : "", false);
-
+  const allJobs = getCompletedJobs().slice();
   const jobs = applyListFilterAndSort(allJobs);
 
   jobs.forEach((job) => {
@@ -660,11 +721,12 @@ function renderSavedJobs() {
     list.appendChild(item);
   });
 
-  document.getElementById("saved-count").textContent = `${jobs.length} saved job record(s)`;
+  document.getElementById("saved-count").textContent = `${jobs.length} completed job record(s)`;
+  renderOngoingJobs();
 }
 
 function openSavedDetail(jobId) {
-  const job = getUserJobs().find((j) => j.jobId === jobId);
+  const job = getCompletedJobs().find((j) => j.jobId === jobId);
   if (!job) return;
 
   state.activeDetailJobId = jobId;
@@ -694,7 +756,7 @@ function toCsvCell(value) {
 }
 
 function exportCsv() {
-  const jobs = getUserJobs();
+  const jobs = getCompletedJobs();
   if (!jobs.length) {
     alert("No saved jobs to export.");
     return;
@@ -878,9 +940,29 @@ function bindInputs() {
     renderSavedJobs();
   });
 
-  document.getElementById("calculate-job").addEventListener("click", () => {
+  document.getElementById("save-job").addEventListener("click", () => {
     ensureUniqueDraftJobId();
-    const snapshot = snapshotCurrentJob();
+    const snapshot = snapshotCurrentJob("ongoing");
+    const existingIdx = state.savedJobs.findIndex((j) => j.jobId === snapshot.jobId);
+    if (existingIdx >= 0) state.savedJobs[existingIdx] = snapshot;
+    else state.savedJobs.unshift(snapshot);
+
+    state.lastCalculatedJobId = snapshot.jobId;
+    state.draft = makeDraft(state.settings);
+    state.isEditingSavedJob = false;
+    state.jobPricingOverride = null;
+    saveState();
+    renderHeaderFields();
+    renderAllRows();
+    renderSummary();
+    renderSavedJobs();
+    document.getElementById("entry-save-status").textContent = "Saved to Ongoing.";
+    void syncCloud();
+  });
+
+  document.getElementById("finish-job").addEventListener("click", () => {
+    ensureUniqueDraftJobId();
+    const snapshot = snapshotCurrentJob("completed");
     const existingIdx = state.savedJobs.findIndex((j) => j.jobId === snapshot.jobId);
     if (existingIdx >= 0) {
       state.savedJobs[existingIdx] = snapshot;
@@ -890,12 +972,8 @@ function bindInputs() {
     state.lastCalculatedJobId = snapshot.jobId;
     saveState();
     renderSavedJobs();
-    const summaryView = summaryFromSavedJob(snapshot);
-    state.activeSummaryView = summaryView;
-    renderSummaryDetails(summaryView.sum, summaryView.settings);
-    openModal("summary-modal");
 
-    // Clear Main for next entry; Edit Job restores this saved record.
+    // Clear Entry for the next job after moving this one to Completed.
     state.draft = makeDraft(state.settings);
     state.jobPricingOverride = null;
     state.isEditingSavedJob = false;
@@ -903,6 +981,7 @@ function bindInputs() {
     renderHeaderFields();
     renderAllRows();
     renderMainTotals(calcSummary(), getEffectiveSettings());
+    document.getElementById("entry-save-status").textContent = "Finished and moved to Completed.";
 
     void syncCloud();
   });
@@ -930,6 +1009,7 @@ function bindInputs() {
     renderHeaderFields();
     renderAllRows();
     renderSummary();
+    document.getElementById("entry-save-status").textContent = "";
     setActiveTab("main");
     state.activeSummaryView = null;
     closeModal("summary-modal");
@@ -968,7 +1048,7 @@ function bindInputs() {
     void syncCloud(true);
   });
   document.getElementById("clear-saved").addEventListener("click", () => {
-    const jobs = getUserJobs();
+    const jobs = getCompletedJobs();
     if (!jobs.length) return;
     const ok = confirm("Clear all saved jobs?");
     if (!ok) return;

@@ -27,7 +27,7 @@ body {
 
 .tabs {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 6px;
   padding: 10px;
   background: #ededed;
@@ -228,6 +228,13 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .total-job-cost {
   border: 2px solid var(--brand);
+}
+.live-job-total {
+  border: 2px solid var(--brand);
+}
+.live-job-total .summary-row.total {
+  font-size: 1.1rem;
+  font-weight: 800;
 }
 .total-job-cost h2 {
   font-size: 1.15rem;
